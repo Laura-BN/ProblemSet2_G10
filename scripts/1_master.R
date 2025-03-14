@@ -1,58 +1,36 @@
 #-----------------------------------------------------------------------------//
-#  Master
-# Problem Set 1 G10 - BDML 202501
-# Fecha: 
+# Master
+# Problem Set 2 G10 - BDML 202501
 #-----------------------------------------------------------------------------//
 
 rm(list = ls())
 
 #-----------------------------------------------------------------------------//
-# 1. Usuarios ----
+# 1. Configurar rutas relativas con {here} ----
 #-----------------------------------------------------------------------------//
 
-paths = c(
-  #"H:/My Drive/1. General/3. Académico/3. Uniandes/Machine Learning + BD/Repos_GitHub",
-  #"/Users/camilaortiz/Dropbox/PEG/BigData",
-  "G:/Mi unidad/Academia/Maestría MEcA/Big data y machine learning/Taller 1"
-)
+# Instalar paquete 'here' si no está instalado
+if (!require(here)) install.packages("here", dependencies = TRUE)
+library(here)
 
-# Iterar sobre las rutas y seleccionar la primera que exista
-path_user = NULL
-for (path in paths) {
-  if (dir.exists(path)) {
-    path_user <- path
-    break 
-  }
-}
+# Definir la ruta principal como la raíz del proyecto
+path_main <- here() 
 
-# Ruta seleccionada
-if (!is.null(path_user)) {
-  print(paste("Ruta seleccionada:", path_user))
-} else {
-  print("Ninguno de las rutas es accesible.")
-}
+# Definir subcarpetas dentro del proyecto
+document_path <- file.path(path_main, "document") 
+scripts_path  <- file.path(path_main, "scripts") 
+stores_path   <- file.path(path_main, "stores")
+view_path     <- file.path(path_main, "views")
 
 #-----------------------------------------------------------------------------//
-# 2. Ruta de los archivos ----
+# 2. Cargar paquetes ----
 #-----------------------------------------------------------------------------//
 
-path_main = "ProblemSet1_G10"
-path_gen = file.path(path_user, path_main)
+# Instalar paquetería {pacman} si no está instalada
+if (!require(pacman)) install.packages("pacman", dependencies = TRUE)
+library(pacman)
 
-document_path = file.path(path_gen, "document") 
-scripts_path  = file.path(path_gen, "scripts") 
-stores_path   = file.path(path_gen, "stores")
-view_path     = file.path(path_gen, "views")
-
-#-----------------------------------------------------------------------------//
-# 3. Paquetes ----
-#-----------------------------------------------------------------------------//
-
-# Instalar paqueta pacman.
-#install.packages("pacman")
-
-# Llamar librerías
-require(pacman)
+# Cargar paquetes necesarios
 p_load(tidyverse, 
        rvest,
        dplyr,
@@ -68,11 +46,6 @@ p_load(tidyverse,
        survey,
        VIM, 
        fastDummies, 
-       xtable, 
-       broom, 
        caret,
-       boot) 
-
-#Instalar paquete DescTools
-# install.packages("DescTools")
-# library(DescTools)
+       boot,
+       DescTools) 
