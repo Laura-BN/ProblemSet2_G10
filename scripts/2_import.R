@@ -4,9 +4,12 @@
 # Fecha: 14 de marzo de 2025
 #-----------------------------------------------------------------------------//
 
-# Instalamos los paquetes si no están instalados
+# Instalamos paquetes si no están instalados
 if (!require(pacman)) install.packages("pacman", dependencies = TRUE)
 pacman::p_load(dplyr, readr, zip)
+
+if (!require(crayon)) install.packages("crayon", dependencies = TRUE)
+library(crayon)
 
 # Ruta con las bases de datos en ZIP
 zip_path <- file.path(raw_path, "uniandes-bdml-202510-ps-2.zip")
@@ -30,7 +33,7 @@ saveRDS(test_merged, file.path(stores_path, "test_merged.rds"))
 saveRDS(train_merged, file.path(stores_path, "train_merged.rds"))
 
 # Mensaje de proceso realizado
-message("Bases guardadas en ", stores_path)
+message(green("✅ Bases guardadas en "), green(stores_path))
 
 
  
