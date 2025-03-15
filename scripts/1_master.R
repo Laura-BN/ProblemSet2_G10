@@ -17,7 +17,8 @@ library(here)
 path_main <- here() 
 
 # Definir subcarpetas dentro del proyecto
-document_path <- file.path(path_main, "document") 
+document_path <- file.path(path_main, "document")
+raw_path <- file.path(path_main, "raw") 
 scripts_path  <- file.path(path_main, "scripts") 
 stores_path   <- file.path(path_main, "stores")
 view_path     <- file.path(path_main, "views")
@@ -49,3 +50,8 @@ p_load(tidyverse,
        caret,
        boot,
        DescTools) 
+
+
+#----------------------------------------------
+# Ejecutar scripts
+
