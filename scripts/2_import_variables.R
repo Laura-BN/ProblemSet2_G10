@@ -184,11 +184,23 @@ test <- pre_test %>%
               )
 
 
+#Up sampling para manejar clase imbalanceada
+#Proporcion de la clase minoritaria = 20% -> Desbalance moderado
+
+set.seed(1103)
+upSampledTrain  <- upSample(x = train,
+                           y = train$Pobre,
+                           yname = "Pobre")
+dim(train)
+dim(upSampledTrain)
+table(upSampledTrain$Pobre)
+
 # 5. GUARDAR BASES DE DATOS ----------------------------------------------------
 
 # Guardar los archivos en formato .rds en la carpeta stores
 saveRDS(train, file.path(stores_path, "train_data.rds"))
 saveRDS(test, file.path(stores_path, "test_data.rds"))
+saveRDS(upSampledTrain, file.path(stores_path, "upsampled_train_data.rds"))
 
 
 # Mensaje de proceso realizado
