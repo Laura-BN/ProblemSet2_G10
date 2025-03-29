@@ -49,7 +49,8 @@ p_load(tidyverse,
        fastDummies, 
        caret,
        boot,
-       DescTools) 
+       DescTools,
+       Metrics) 
 
 
 #----------------------------------------------
