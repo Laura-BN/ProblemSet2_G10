@@ -169,24 +169,28 @@ pre_test <- test_hogares_vars %>%
 
 train <- pre_train %>%
         mutate(Pobre = factor(Pobre, levels=c(1,0), labels=c("Si","No")),
+               jefe_mujer = factor(jefe_mujer, levels = c(1, 0), labels = c("Si", "No")),
+               jefe_salud_sub = factor(jefe_salud_sub, levels = c(1, 0), labels = c("Si", "No")),
+               jefe_pension = factor(jefe_pension, levels = c(1, 0), labels = c("Si", "No")),
+               
                Dominio = factor(Dominio),
                jefe_nivel_educ = factor(jefe_nivel_educ, levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
                max_nivel_educ = factor(max_nivel_educ,levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
                Clase = factor(Clase,levels=c(1:2), labels=c('Cabecera','Resto'))
               )
 
-
 test <- pre_test %>%
-        mutate(Dominio = factor(Dominio),
+        mutate(jefe_mujer = factor(jefe_mujer, levels = c(1, 0), labels = c("Si", "No")),
+               jefe_salud_sub = factor(jefe_salud_sub, levels = c(1, 0), labels = c("Si", "No")),
+               jefe_pension = factor(jefe_pension, levels = c(1, 0), labels = c("Si", "No")),
+               Dominio = factor(Dominio),
                jefe_nivel_educ = factor(jefe_nivel_educ, levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
                max_nivel_educ = factor(max_nivel_educ,levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
                Clase = factor(Clase,levels=c(1:2), labels=c('Cabecera','Resto'))
               )
 
-
 #Up sampling para manejar clase imbalanceada
 #Proporcion de la clase minoritaria = 20% -> Desbalance moderado
-
 set.seed(1103)
 upSampledTrain  <- upSample(x = train,
                            y = train$Pobre,
