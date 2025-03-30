@@ -161,9 +161,7 @@ pre_train <- train_hogares_vars %>%
             select(-id) # No se necesitará más la variable id
 
 pre_test <- test_hogares_vars %>% 
-            left_join(test_personas_hogar, by = "id") %>%
-            select(-id) # No se necesitará más la variable id
-
+            left_join(test_personas_hogar, by = "id") 
 
 # Convertir las variables categoricas y obtener la base final
 
