@@ -187,6 +187,13 @@ test <- pre_test %>%
                Clase = factor(Clase,levels=c(1:2), labels=c('Cabecera','Resto'))
               )
 
+#Normalizar variables numericas
+train <- train %>%
+  mutate(across(where(is.numeric), ~ scale(.)[, 1], .names = "{.col}_z"))
+
+test <-test%>%
+  mutate(across(where(is.numeric), ~ scale(.)[, 1], .names = "{.col}_z"))
+
 #Up sampling para manejar clase imbalanceada
 #Proporcion de la clase minoritaria = 20% -> Desbalance moderado
 set.seed(1103)
