@@ -166,10 +166,10 @@ pre_test <- test_hogares_vars %>%
 # Convertir las variables categoricas y obtener la base final
 
 train <- pre_train %>%
-        mutate(Pobre = factor(Pobre, levels=c(1,0), labels=c("Si","No")),
-               jefe_mujer = factor(jefe_mujer, levels = c(1, 0), labels = c("Si", "No")),
-               jefe_salud_sub = factor(jefe_salud_sub, levels = c(1, 0), labels = c("Si", "No")),
-               jefe_pension = factor(jefe_pension, levels = c(1, 0), labels = c("Si", "No")),
+        mutate(Pobre = factor(Pobre, levels=c(1,0), labels=c("Pobre","No_pobre")),
+               jefe_mujer = factor(jefe_mujer, levels = c(1, 0), labels = c("Jefe_mujer", "Jefe_hombre")),
+               jefe_salud_sub = factor(jefe_salud_sub, levels = c(1, 0), labels = c("Jefe_salud_subsidiado", "Jefe_salud_contributivo")),
+               jefe_pension = factor(jefe_pension, levels = c(1, 0), labels = c("Jefe_af_pension", "Jefe_no_af_pension")),
                
                Dominio = factor(Dominio),
                jefe_nivel_educ = factor(jefe_nivel_educ, levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
@@ -178,31 +178,31 @@ train <- pre_train %>%
               )
 
 test <- pre_test %>%
-        mutate(jefe_mujer = factor(jefe_mujer, levels = c(1, 0), labels = c("Si", "No")),
-               jefe_salud_sub = factor(jefe_salud_sub, levels = c(1, 0), labels = c("Si", "No")),
-               jefe_pension = factor(jefe_pension, levels = c(1, 0), labels = c("Si", "No")),
+        mutate(jefe_mujer = factor(jefe_mujer, levels = c(1, 0), labels = c("Jefe_mujer", "Jefe_hombre")),
+               jefe_salud_sub = factor(jefe_salud_sub, levels = c(1, 0), labels = c("Jefe_salud_subsidiado", "Jefe_salud_contributivo")),
+               jefe_pension = factor(jefe_pension, levels = c(1, 0), labels = c("Jefe_af_pension", "Jefe_no_af_pension")),
                Dominio = factor(Dominio),
                jefe_nivel_educ = factor(jefe_nivel_educ, levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
                max_nivel_educ = factor(max_nivel_educ,levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
                Clase = factor(Clase,levels=c(1:2), labels=c('Cabecera','Resto'))
               )
 
-#Normalizar variables numericas
-train <- train %>%
-  mutate(across(where(is.numeric), ~ scale(.)[, 1], .names = "{.col}_z"))
+# Normalizar variables numericas
+  train <- train %>%
+    mutate(across(where(is.numeric), ~ scale(.)[, 1], .names = "{.col}_z"))
+  
+  test <-test%>%
+    mutate(across(where(is.numeric), ~ scale(.)[, 1], .names = "{.col}_z"))
 
-test <-test%>%
-  mutate(across(where(is.numeric), ~ scale(.)[, 1], .names = "{.col}_z"))
-
-#Up sampling para manejar clase imbalanceada
-#Proporcion de la clase minoritaria = 20% -> Desbalance moderado
-set.seed(1103)
-upSampledTrain  <- upSample(x = train,
-                           y = train$Pobre,
-                           yname = "Pobre")
-dim(train)
-dim(upSampledTrain)
-table(upSampledTrain$Pobre)
+# Up sampling para manejar clase imbalanceada
+# Proporcion de la clase minoritaria = 20% -> Desbalance moderado
+  set.seed(1103)
+  upSampledTrain  <- upSample(x = train,
+                             y = train$Pobre,
+                             yname = "Pobre")
+  dim(train)
+  dim(upSampledTrain)
+  table(upSampledTrain$Pobre)
 
 # 5. GUARDAR BASES DE DATOS ----------------------------------------------------
 
