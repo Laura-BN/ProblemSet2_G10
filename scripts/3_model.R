@@ -4,24 +4,18 @@ train <- readRDS(file.path(stores_path, "upsampled_train_data.rds"))
 test  <- readRDS(file.path(stores_path, "test_data.rds"))
 
 # Variables explicativas
-columnas_train <- c("hacinamiento", "Clase", "jefe_mujer", "prop_ocu_pet",
-              "jefe_edad", "jefe_edad2", "jefe_nivel_educ",
-              "N_mayor_dependiente", "Pobre")
+#Modelo 1
+columnas_train <- c("hacinamiento_z", "Clase", "jefe_mujer", "prop_ocu_pet_z",
+                      "jefe_edad_z", "jefe_edad2_z", "jefe_nivel_educ",
+                      "N_mayor_dependiente_z", "Pobre")
 
-columnas_test <- c("id", "hacinamiento", "Clase", "jefe_mujer", "prop_ocu_pet", 
-              "jefe_edad", "jefe_edad2", "jefe_nivel_educ", 
-              "N_mayor_dependiente")
+columnas_test <- c("id","hacinamiento_z", "Clase", "jefe_mujer", "prop_ocu_pet_z",
+                   "jefe_edad_z", "jefe_edad2_z", "jefe_nivel_educ",
+                    "N_mayor_dependiente_z"))
 
 # Filtrar el dataset
 train_subset <- train[, columnas_train]
 test_subset <- test[, columnas_test]
-
-#Normalizar variables numericas
-train_subset <- train_subset %>%
-  dplyr::mutate_if(is.numeric, scale)
-
-test_subset <- test_subset %>%
-  dplyr::mutate_if(is.numeric, scale)
 
 #Definir función de evaluación personalizada 
 multiStats <- function(...) c(twoClassSummary(...), defaultSummary(...), prSummary(...))
@@ -41,9 +35,8 @@ multiStats <- function(...) c(twoClassSummary(...), defaultSummary(...), prSumma
  alpha <- seq(0, 1, by = 0.2) 
  grid <- expand.grid("alpha" = alpha, "lambda" = lambda) 
 
-#Entrenar el modelo usando `glmnet`
  set.seed(1234)
- model1 <- train(Pobre~.,
+ model1  <- train(Pobre~.,
    data = train_subset,  
    method = "glmnet",
    family = "binomial",
@@ -72,4 +65,57 @@ multiStats <- function(...) c(twoClassSummary(...), defaultSummary(...), prSumma
  
  write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
 
+ 
+#Modelo 2
+ columnas_train <- c("hacinamiento_z", "Clase", "jefe_mujer", "prop_ocu_pet_z",
+                     "jefe_edad_z", "jefe_edad2_z", "jefe_nivel_educ",
+                     "N_mayor_dependiente_z", "N_menores_z", "Pobre")
+ 
+ columnas_test <- c("id","hacinamiento_z", "Clase", "jefe_mujer", "prop_ocu_pet_z",
+                    "jefe_edad_z", "jefe_edad2_z", "jefe_nivel_educ",
+                    "N_mayor_dependiente_z", "N_menores_z")
+
+#Forma de variables explicativas
+X <- c("Clase", "prop_ocu_pet_z", "jefe_mujer", "hacinamiento_z", 
+       "N_mayor_dependiente_z", "jefe_nivel_educ", "N_menores_z", 
+       "jefe_edad_z", "jefe_edad2_z", 
+       "hacinamiento_z:N_mayor_dependiente_z", 
+       "jefe_mujer:jefe_nivel_educ", 
+       "N_menores_z:jefe_mujer")
+
+# Filtrar el dataset
+train_subset <- train[, columnas_train]
+test_subset <- test[, columnas_test]
+
+#Entrenar el modelo usando `glmnet`
+ set.seed(1234)
+ model2  <- train(
+   formula(paste0("Pobre ~", paste0(X, collapse = " + "))),
+   data = train_subset,  
+   method = "glmnet",
+   family = "binomial",
+   trControl = ctrl,  
+   metric = "F",  
+   tuneGrid = grid
+ )
+ model2
+ 
+ #Calcular las predicciones para la base de datos test
+ predictSample <- test_subset %>% 
+   mutate(pobre_pred = predict(model2, newdata = test_subset, type = "raw")) %>% 
+   select(id, pobre_pred) # alpha= 0.6 and lambda = 0.01097
+ 
+ predictSample <- predictSample %>% 
+   mutate(pobre=ifelse(pobre_pred=="Si",1,0)) %>% 
+   select(id,pobre)
+ 
+ table(predictSample$pobre) #24404 
+ 
+ #save
+ lambda_str <- gsub("[.]", "_", as.character(round(model2$bestTune$lambda, 4)))
+ alpha_str <- gsub("[.]", "_", as.character(model2$bestTune$alpha))
+ 
+ name <- paste0("EN_lambda_", lambda_str, "_alpha_", alpha_str, ".csv") 
+ 
+ write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
  
