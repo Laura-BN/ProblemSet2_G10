@@ -146,19 +146,16 @@ test_subset <- test[, columnas_test]
          "prop_ocu_pet_z:N_mujer_z",
          "poly(N_menores_z, 2, raw = TRUE):jefe_mujer")
  
- 
- 
  # Filtrar el dataset
  train_subset <- train[, columnas_train]
  test_subset <- test[, columnas_test]
  
  # toca poner reemplazos en NAs de la variable de salud 
- 
  # train_subset$jefe_salud_sub[which(is.na(train_subset$jefe_salud_sub))] <- "Jefe_salud_subsidiado"
  # test_subset$jefe_salud_sub[which(is.na(test_subset$jefe_salud_sub))] <- "Jefe_salud_subsidiado"
  
  #Definición de la grilla de hiperparámetros 
- lambda <- 10^seq(2, -6, length = 100)  
+ lambda <- 10^seq(2, -6, length = 50)  
  alpha <- seq(0, 1, by = 0.2) 
  grid <- expand.grid("alpha" = alpha, "lambda" = lambda) 
  

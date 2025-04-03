@@ -5,9 +5,9 @@
 train = readRDS(file.path(stores_path, "upsampled_train_data.rds"))
 test  = readRDS(file.path(stores_path, "test_data.rds"))
 
-colnames(train)
+train = train[, !duplicated(colnames(train))]
+train = train %>% dplyr::mutate(Pobre_d = ifelse(Pobre == "Pobre", 1, 0))
 
-"hacinamiento_z"
 #------------------------------------------------------------------------------#
 # 1. Modelos ----
 #------------------------------------------------------------------------------#
@@ -16,82 +16,69 @@ colnames(train)
 # Variables explicativas
 #-----------------------
 
-X_1 = c("poly(hacinamiento_z, 2, raw=TRUE)", 
+X_1 = c("hacinamiento", 
         "Clase",
         "jefe_mujer", 
         "prop_ocu_pet", 
-        "jefe_edad_z",
-        "jefe_edad2_z", 
-        "poly(jefe_nivel_educ, 2 ,raw=TRUE)",
-        "N_mayor_dependiente_z", 
-        "prop_ina_pet_z",
+        "jefe_edad",
+        "jefe_nivel_educ",
+        "N_mayor_dependiente", 
+        "prop_ina_pet",
         "jefe_pension", 
-        "poly(N_menores_z, 2 ,raw=TRUE)")
-
-X_2 = c("poly(hacinamiento_z, 2, raw=TRUE)", 
-        "Clase",
-        "jefe_mujer", 
-        "prop_ocu_pet", 
-        "jefe_edad_z",
-        "jefe_edad2_z", 
-        "poly(jefe_nivel_educ, 2 ,raw=TRUE)",
-        "N_mayor_dependiente_z", 
-        "prop_ocu_pet_z",
-        "jefe_pension", 
-        "poly(N_menores_z, 2, raw = TRUE):jefe_mujer")
-
-X_3 = c("poly(hacinamiento_z, 2, raw=TRUE)", 
-          "Clase",
-          "prop_ocu_pet", 
-          "jefe_edad_z",
-          "jefe_edad2_z", 
-          "poly(jefe_nivel_educ, 2, raw=TRUE):jefe_mujer",
-          "N_mayor_dependiente_z", 
-          "prop_ocu_pet_z:N_mujer_z",
-          "jefe_pension", 
-          "poly(N_menores_z, 2, raw = TRUE):jefe_mujer")
-
-X_4 = c("poly(hacinamiento_z, 2, raw=TRUE)", 
-        "Clase",
-        "prop_ocu_pet", 
-        "jefe_edad_z",
-        "jefe_edad2_z", 
-        "poly(jefe_nivel_educ, 2, raw=TRUE):jefe_mujer",
-        "N_mayor_dependiente_z:jefe_pension", 
-        "jefe_salud_sub",
-        "prop_ocu_pet_z:N_mujer_z",
-        "poly(N_menores_z, 2, raw = TRUE):jefe_mujer")
-
-X_5 = c("poly(hacinamiento_z, 2, raw=TRUE)", 
-        "Clase",
-        "prop_ocu_pet",                            # maaaaal debe ser z, no? 
-        "jefe_edad_z",
-        "jefe_edad2_z", 
-        "poly(jefe_nivel_educ, 2, raw=TRUE):jefe_mujer",
-        "N_mayor_dependiente_z:jefe_pension", 
-        "jefe_salud_sub",
-        "prop_ina_pet_z:N_mujer_z",
-        "poly(N_menores_z, 2, raw = TRUE):jefe_mujer")
-
-
-X_6 = c("poly(hacinamiento_z, 2, raw=TRUE):jefe_salud_sub", 
-        "Clase",
-        "prop_ocu_pet", 
-        "jefe_edad_z",
-        "jefe_edad2_z", 
-        "poly(jefe_edad_z, 2, raw=TRUE):jefe_mujer",
-        "poly(jefe_nivel_educ, 1, raw=TRUE):jefe_mujer",
-        "poly(jefe_edad_z, 2, raw=TRUE):jefe_nivel_educ",
-        
-        "N_mayor_dependiente_z:jefe_pension", 
-        "jefe_salud_sub",
-        "prop_ocu_pet_z:N_mujer_z",
-        "poly(N_menores_z, 2, raw = TRUE):jefe_mujer")
+        "N_menores")
 
 
 
+sapply(train, class)
 
-table(test$jefe_salud_sub)
+
+# Estimar modelo 
+
+bagged_tree = ranger::ranger(
+              formula(paste0("Pobre ~", paste0(X_1, collapse = " + "))),
+              data = train,
+              num.trees= 500, ## Numero de bootstrap samples y arboles a estimar. Default 500  
+              mtry= 8,   # N. var aleatoriamente seleccionadas en cada partición. Baggin usa todas las vars.
+              min.node.size  = 1, ## Numero minimo de observaciones en un nodo para intentar 
+            ) 
+bagged_tree
+
+# Clacular predicciones
+
+bagged_pred = predict(
+              bagged_tree,
+              data = train, # toca en train porque en test no existe "Pobre"
+              predict.all = TRUE # para obtener la predicción de cada arbol. 
+            )
+
+# Guardamos la predicción de cada árbol dataframe
+pred.bag_ranger = as.data.frame( bagged_pred$predictions )
+
+# Visualizemoslo
+head(tibble(pred.bag_ranger))
+
+
+# Calcular las probabilidades de Default (promedio todos los árboles)
+ntrees = ncol( pred.bag_ranger )
+phat.bag = rowSums(pred.bag_ranger == 2) / ntrees
+
+Pobre_num = train$Pobre_d
+
+length(Pobre_num)
+length(phat.bag)
+
+# Calcular y guardar AUC de bagging
+aucval_bag = Metrics::auc(
+             actual = Pobre_num,
+             predicted = phat.bag)
+aucval_bag
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
 
 ctrl = trainControl(method = "cv",
                     number = 10,

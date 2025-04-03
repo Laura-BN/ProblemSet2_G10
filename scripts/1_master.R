@@ -61,8 +61,10 @@ p_load(tidyverse,
        rpart,
        rpart.plot,
        ipred,
-       ranger) 
-
+       ranger, 
+       ggplot2, 
+       randomForest, 
+       adabag)
 
 #----------------------------------------------
 # Ejecutar scripts
