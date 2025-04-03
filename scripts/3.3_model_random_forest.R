@@ -1,35 +1,26 @@
 #-----------------------------------------------------------------------------//
-# Importar datos
+# Modelo Random Forest
 # Problem Set 2 G10 - BDML 202501
-# Fecha: 14 de marzo de 2025
+# Fecha actualización: 03 de abril de 2025
 #-----------------------------------------------------------------------------//
 
 # 1. INSTALAR PAQUETES ---------------------------------------------------------
 
-if (!require(pacman)) install.packages("pacman", dependencies = TRUE)
-pacman::p_load(dplyr, readr, zip)
-
-if (!require(crayon)) install.packages("crayon", dependencies = TRUE)
-library(crayon)
 
 
-# 2. IMPORTAR DATOS ------------------------------------------------------------
 
-# Ruta con las bases de datos en ZIP
-zip_path <- file.path(raw_path, "uniandes-bdml-202510-ps-2.zip")
+# 1. IMPORTAR DATOS ------------------------------------------------------------
 
-# Listar los archivos dentro del ZIP para verificar la estructura
-zip_files <- zip::zip_list(zip_path)
-print(zip_files$file)  # Para ver cómo están organizados dentro del ZIP
+up_train <- readRDS(file.path(stores_path, "upsampled_train_data.rds"))
+train <- readRDS(file.path(stores_path, "train_data.rds"))
+test  <- readRDS(file.path(stores_path, "test_data.rds"))
 
-# Definir los nombres correctos de los archivos dentro del ZIP
-test_personas <- read_csv(unz(zip_path, "test_personas.csv"))
-test_hogares  <- read_csv(unz(zip_path, "test_hogares.csv"))
-train_personas <- read_csv(unz(zip_path, "train_personas.csv"))
-train_hogares  <- read_csv(unz(zip_path, "train_hogares.csv"))
+# Eliminar algunas variables que no entran en el modelo
+test <- test %>% select(-ends_with("_z"), -jefe_edad2)
+train <- train %>% select(-ends_with("_z"), -jefe_edad2)
 
-
-   # train_personas <- train_personas %>% slice(1:100)
+# Configuracion inicial: utilizar como referencia "Pobre" para la variable Pobre
+train <- train  %>% mutate(Pobre=relevel(Pobre,ref="Pobre"))
 
 
 # 3. CREAR NUEVAS VARIABLES EN LA BASE PERSONAS --------------------------------
@@ -161,8 +152,7 @@ pre_train <- train_hogares_vars %>%
             select(-id) # No se necesitará más la variable id
 
 pre_test <- test_hogares_vars %>% 
-            left_join(test_personas_hogar, by = "id") %>%
-            select(-id) # No se necesitará más la variable id
+            left_join(test_personas_hogar, by = "id") 
 
 # Convertir las variables categoricas y obtener la base final
 
