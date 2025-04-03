@@ -64,7 +64,7 @@ X_4 = c("poly(hacinamiento_z, 2, raw=TRUE)",
 
 X_5 = c("poly(hacinamiento_z, 2, raw=TRUE)", 
         "Clase",
-        "prop_ocu_pet", 
+        "prop_ocu_pet",                            # maaaaal debe ser z, no? 
         "jefe_edad_z",
         "jefe_edad2_z", 
         "poly(jefe_nivel_educ, 2, raw=TRUE):jefe_mujer",
@@ -72,6 +72,24 @@ X_5 = c("poly(hacinamiento_z, 2, raw=TRUE)",
         "jefe_salud_sub",
         "prop_ina_pet_z:N_mujer_z",
         "poly(N_menores_z, 2, raw = TRUE):jefe_mujer")
+
+
+X_6 = c("poly(hacinamiento_z, 2, raw=TRUE):jefe_salud_sub", 
+        "Clase",
+        "prop_ocu_pet", 
+        "jefe_edad_z",
+        "jefe_edad2_z", 
+        "poly(jefe_edad_z, 2, raw=TRUE):jefe_mujer",
+        "poly(jefe_nivel_educ, 1, raw=TRUE):jefe_mujer",
+        "poly(jefe_edad_z, 2, raw=TRUE):jefe_nivel_educ",
+        
+        "N_mayor_dependiente_z:jefe_pension", 
+        "jefe_salud_sub",
+        "prop_ocu_pet_z:N_mujer_z",
+        "poly(N_menores_z, 2, raw = TRUE):jefe_mujer")
+
+
+
 
 table(test$jefe_salud_sub)
 
@@ -146,18 +164,30 @@ logit_5 =  train(
 
  logit_acc_5 = logit_5$results$Accuracy; logit_acc_5
 
+set.seed(9873)
+logit_6 =  train(
+   formula(paste0("Pobre ~", paste0(X_6, collapse = " + "))),
+   data = train, 
+   method = "glm",
+   trControl = ctrl,
+   family = "binomial")
+ 
+logit_acc_6 = logit_6$results$Accuracy; logit_acc_6
+ 
+ 
 logit_acc_1
 logit_acc_2
 logit_acc_3
 logit_acc_4
 logit_acc_5
+logit_acc_6
 
 #------------------------------------------------------------------------------#
 # Resultados para Kaggle
 #------------------------------------------------------------------------------#
 
 predictSample = test   %>% 
-                mutate(pobre_lab = predict(logit_4, newdata = test, type = "raw")    ## predicted class labels
+                mutate(pobre_lab = predict(logit_6, newdata = test, type = "raw")    ## predicted class labels
                 )  %>% select(id, pobre_lab)
 
 head(predictSample)
@@ -179,7 +209,7 @@ table(predictSample$pobre)
 # alpha_str <- gsub("\\.", "_", as.character(logit_4$bestTune$alpha))
 
 name = paste0(
-  "Logit_2",
+  "Logit_3",
   ".csv") 
 
 write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
