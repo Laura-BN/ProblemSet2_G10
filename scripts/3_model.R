@@ -127,7 +127,7 @@ test_subset <- test[, columnas_test]
                      
                      "prop_ocu_pet", "jefe_pension", "jefe_salud_sub", "N_mujer_z")
  
- columnas_test <- c("id","hacinamiento_z", "Clase", "jefe_mujer", "prop_ocu_pet_z",
+ columnas_test <- c("hacinamiento_z", "Clase", "jefe_mujer", "prop_ocu_pet_z",
                     "jefe_edad_z", "jefe_edad2_z", "jefe_nivel_educ",
                     "N_mayor_dependiente_z", "N_menores_z", 
                     
@@ -152,9 +152,20 @@ test_subset <- test[, columnas_test]
  train_subset <- train[, columnas_train]
  test_subset <- test[, columnas_test]
  
+ # toca poner reemplazos en NAs de la variable de salud 
+ 
+ # train_subset$jefe_salud_sub[which(is.na(train_subset$jefe_salud_sub))] <- "Jefe_salud_subsidiado"
+ # test_subset$jefe_salud_sub[which(is.na(test_subset$jefe_salud_sub))] <- "Jefe_salud_subsidiado"
+ 
+ #Definición de la grilla de hiperparámetros 
+ lambda <- 10^seq(2, -6, length = 100)  
+ alpha <- seq(0, 1, by = 0.2) 
+ grid <- expand.grid("alpha" = alpha, "lambda" = lambda) 
+ 
+ 
  #Entrenar el modelo usando `glmnet`
  set.seed(1234)
- model2  <- train(
+ model3  <- train(
    formula(paste0("Pobre ~", paste0(X, collapse = " + "))),
    data = train_subset,  
    method = "glmnet",
@@ -163,11 +174,11 @@ test_subset <- test[, columnas_test]
    metric = "F",  
    tuneGrid = grid
  )
- model2
+ model3
  
  #Calcular las predicciones para la base de datos test
  predictSample <- test_subset %>% 
-   mutate(pobre_pred = predict(model2, newdata = test_subset, type = "raw")) %>% 
+   mutate(pobre_pred = predict(model3, newdata = test_subset, type = "raw")) %>% 
    select(id, pobre_pred) # alpha= 0.6 and lambda = 0.01097
  
  predictSample <- predictSample %>% 
@@ -178,7 +189,7 @@ test_subset <- test[, columnas_test]
  
  #save
  lambda_str <- gsub("[.]", "_", as.character(round(model2$bestTune$lambda, 4)))
- alpha_str <- gsub("[.]", "_", as.character(model2$bestTune$alpha))
+ alpha_str <- gsub("[.]", "_", as.character(model3$bestTune$alpha))
  
  name <- paste0("EN_lambda_", lambda_str, "_alpha_", alpha_str, ".csv") 
  

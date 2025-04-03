@@ -104,8 +104,10 @@ ctrl = trainControl(method = "cv",
 #-----------------------
 
 # train = train %>% mutate(jefe_salud_sub = ifelse(is.na(jefe_salud_sub) & jefe_pension == "Si", "Si", jefe_salud_sub ))
-# train$jefe_salud_sub[which(is.na(train$jefe_salud_sub))] <- "Si"
-# test$jefe_salud_sub[which(is.na(test$jefe_salud_sub))] <- "Si"
+# train_subset$jefe_salud_sub[which(is.na(train_subset$jefe_salud_sub))] <- "Jefe_salud_subsidiado"
+# test_subset$jefe_salud_sub[which(is.na(test_subset$jefe_salud_sub))] <- "Jefe_salud_subsidiado"
+
+
 
 
 # table(train$jefe_pension)
