@@ -6,14 +6,10 @@
 
 # 1. INSTALAR PAQUETES ---------------------------------------------------------
 
-if (!require(pacman)) install.packages("pacman", dependencies = TRUE)
-pacman::p_load(dplyr, readr, zip)
-
-if (!require(crayon)) install.packages("crayon", dependencies = TRUE)
-library(crayon)
 
 
-# 2. IMPORTAR DATOS ------------------------------------------------------------
+
+# 1. IMPORTAR DATOS ------------------------------------------------------------
 
 up_train <- readRDS(file.path(stores_path, "upsampled_train_data.rds"))
 train <- readRDS(file.path(stores_path, "train_data.rds"))
