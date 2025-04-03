@@ -4,10 +4,6 @@
 # Fecha actualización: 03 de abril de 2025
 #-----------------------------------------------------------------------------//
 
-# 1. INSTALAR PAQUETES ---------------------------------------------------------
-
-
-
 
 # 1. IMPORTAR DATOS ------------------------------------------------------------
 
@@ -16,14 +12,29 @@ train <- readRDS(file.path(stores_path, "train_data.rds"))
 test  <- readRDS(file.path(stores_path, "test_data.rds"))
 
 # Eliminar algunas variables que no entran en el modelo
-test <- test %>% select(-ends_with("_z"), -jefe_edad2)
-train <- train %>% select(-ends_with("_z"), -jefe_edad2)
+test <- test %>% select(-ends_with("_z"))
+train <- train %>% select(-ends_with("_z"))
 
 # Configuracion inicial: utilizar como referencia "Pobre" para la variable Pobre
 train <- train  %>% mutate(Pobre=relevel(Pobre,ref="Pobre"))
 
 
-# 3. CREAR NUEVAS VARIABLES EN LA BASE PERSONAS --------------------------------
+# 2. CONSTRUIR EL ARBOL --------------------------------------------------------
+
+complex_tree <- rpart(Pobre~duration+amount+installment+age+
+                        history+purpose+foreign+rent, 
+                      data    = train,
+                      method = "class",
+                      cp = 0  # complexity parameter, nuestro alpha
+                      )
+
+
+
+
+
+# *****************************************************************************
+
+# 2. CREAR NUEVAS VARIABLES EN LA BASE PERSONAS --------------------------------
 
 # Variable para la base train personas
 
