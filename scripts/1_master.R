@@ -29,7 +29,13 @@ view_path     <- file.path(path_main, "views")
 
 # Instalar paquetería {pacman} si no está instalada
 if (!require(pacman)) install.packages("pacman", dependencies = TRUE)
+pacman::p_load(dplyr, readr, zip)
 library(pacman)
+
+if (!require(crayon)) install.packages("crayon", dependencies = TRUE)
+library(crayon)
+
+
 
 # Cargar paquetes necesarios
 p_load(tidyverse, 
@@ -50,7 +56,11 @@ p_load(tidyverse,
        caret,
        boot,
        DescTools,
-       Metrics) 
+       Metrics,
+       rpart,
+       rpart.plot,
+       ipred,
+       ranger) 
 
 
 #----------------------------------------------
