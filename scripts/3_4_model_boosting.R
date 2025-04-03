@@ -5,17 +5,18 @@
 train = readRDS(file.path(stores_path, "upsampled_train_data.rds"))
 test  = readRDS(file.path(stores_path, "test_data.rds"))
 
+#---------------------------
+# Ajuste de variables y cols
+#---------------------------
+
 train = train[, !duplicated(colnames(train))]
 train = train %>% dplyr::mutate(Pobre_d = ifelse(Pobre == "Pobre", 1, 0))
 
-#------------------------------------------------------------------------------#
-# 1. Modelos ----
-#------------------------------------------------------------------------------#
+Pobre_num = train$Pobre_d # para calcular los indicadores de rendimiento
 
-#-----------------------
-# Variables explicativas
-#-----------------------
-
+#---------------------------
+# Ajuste de variables factor
+#---------------------------
 X_1 = c("hacinamiento", 
         "Clase",
         "jefe_mujer", 
@@ -27,15 +28,62 @@ X_1 = c("hacinamiento",
         "jefe_pension", 
         "N_menores")
 
+summary(train$hacinamiento)
+summary(train$jefe_edad)
+summary(train$N_menores)
+table(train$jefe_mujer)
+summary(train$prop_ocu_pet)
+summary(train$N_mayor_dependiente)
+table(train$jefe_nivel_educ)
+table(train$jefe_pension)
 
+
+train = train %>% mutate(
+        Pobre_d        = factor(Pobre_d, levels=c(0,1),labels=c("No","Si")),
+        hacinamiento_f = factor(ifelse(hacinamiento > 2, 1, 0), labels = c("Si", "No")), # porque es el a lo que se aproxima el 3 cuantil
+        jefe_mayor_f   = factor(ifelse(jefe_edad > 49, 1, 0), labels = c("Si", "No")), # puede ser indicador de que la persona que sostiene el hogar tenga más o menos dinámica laboral
+        N_menores_f    = factor(ifelse(N_menores > 1.6, 1, 0), labels = c("Si", "No")), # número promedio hijas/os por mujer en Colombia (podrían ser más grandes pero por practicidad)
+        jefe_mujer_f   = factor(ifelse(jefe_mujer == "Jefe_mujer", 1, 0), labels = c("Si", "No")), 
+        prop_ocu_pet_f = factor(ifelse(prop_ocu_pet > 0.6, 1, 0), labels = c("Si", "No")), # hogares usualmente 3,3 personas, que trabaje al menos el 60 % (cuantil 3) 
+        Mayor_dependiente_f = factor(ifelse(N_mayor_dependiente >= 1, 1, 0), labels = c("Si", "No")),
+        jefe_cot_pens  = factor(ifelse(jefe_pension == "Jefe_af_pension", 1, 0), labels = c("Si", "No"))
+        )
+
+test = test %>% mutate(
+        hacinamiento_f = factor(ifelse(hacinamiento > 2, 1, 0), labels = c("Si", "No")), # porque es el a lo que se aproxima el 3 cuantil
+        jefe_mayor_f   = factor(ifelse(jefe_edad > 49, 1, 0), labels = c("Si", "No")), # puede ser indicador de que la persona que sostiene el hogar tenga más o menos dinámica laboral
+        N_menores_f    = factor(ifelse(N_menores > 1.6, 1, 0), labels = c("Si", "No")), # número promedio hijas/os por mujer en Colombia (podrían ser más grandes pero por practicidad)
+        jefe_mujer_f   = factor(ifelse(jefe_mujer == "Jefe_mujer", 1, 0), labels = c("Si", "No")), 
+        prop_ocu_pet_f = factor(ifelse(prop_ocu_pet > 0.6, 1, 0), labels = c("Si", "No")), # hogares usualmente 3,3 personas, que trabaje al menos el 60 % (cuantil 3) 
+        Mayor_dependiente_f = factor(ifelse(N_mayor_dependiente >= 1, 1, 0), labels = c("Si", "No")),
+        jefe_cot_pens  = factor(ifelse(jefe_pension == "Jefe_af_pension", 1, 0), labels = c("Si", "No"))
+) 
 
 sapply(train, class)
 
+X_2 = c("hacinamiento_f", 
+        "Clase",
+        "jefe_mujer_f", 
+        "prop_ocu_pet_f", 
+        "jefe_mayor_f",
+        "jefe_nivel_educ",
+        "Mayor_dependiente_f", 
+        "prop_ocu_pet_f",
+        "jefe_cot_pens", 
+        "N_menores_f")
+
+#------------------------------------------------------------------------------#
+# 1. Modelos ----
+#------------------------------------------------------------------------------#
+
+#-----------------------
+# Variables explicativas
+#-----------------------
 
 # Estimar modelo 
 
 bagged_tree = ranger::ranger(
-              formula(paste0("Pobre ~", paste0(X_1, collapse = " + "))),
+              formula(paste0("Pobre ~", paste0(X_2, collapse = " + "))),
               data = train,
               num.trees= 500, ## Numero de bootstrap samples y arboles a estimar. Default 500  
               mtry= 8,   # N. var aleatoriamente seleccionadas en cada partición. Baggin usa todas las vars.
@@ -62,7 +110,6 @@ head(tibble(pred.bag_ranger))
 ntrees = ncol( pred.bag_ranger )
 phat.bag = rowSums(pred.bag_ranger == 2) / ntrees
 
-Pobre_num = train$Pobre_d
 
 length(Pobre_num)
 length(phat.bag)
@@ -73,134 +120,45 @@ aucval_bag = Metrics::auc(
              predicted = phat.bag)
 aucval_bag
 
+ #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
+
+fiveStats <- function(...) {
+  c(
+    caret::twoClassSummary(...), # Returns ROC, Sensitivity, and Specificity
+    caret::defaultSummary(...)  # Returns RMSE and R-squared (for regression) or Accuracy and Kappa (for classification)
+  )
+}
 
 
-ctrl = trainControl(method = "cv",
-                    number = 10,
-                    classProbs = TRUE,
-                    savePredictions = TRUE,
-                    verbose = T)
+ctrl<- trainControl(method = "cv",
+                    number = 5,
+                    summaryFunction = fiveStats,
+                    classProbs = TRUE, 
+                    verbose=FALSE,
+                    savePredictions = T)
 
-#-----------------------
-# Modelo
-#-----------------------
-
-# train = train %>% mutate(jefe_salud_sub = ifelse(is.na(jefe_salud_sub) & jefe_pension == "Si", "Si", jefe_salud_sub ))
-# train_subset$jefe_salud_sub[which(is.na(train_subset$jefe_salud_sub))] <- "Jefe_salud_subsidiado"
-# test_subset$jefe_salud_sub[which(is.na(test_subset$jefe_salud_sub))] <- "Jefe_salud_subsidiado"
+adagrid = expand.grid(
+          mfinal = c( 50, 300 ,500),
+          maxdepth = c(1,2,5),
+          coeflearn = c('Breiman','Freund'))
 
 
+set.seed(91519) # important set seed. 
 
-
-# table(train$jefe_pension)
-# table(train$jefe_salud_sub)
-
-set.seed(9873)
-logit_1 =  train(
-                formula(paste0("Pobre ~", paste0(X_1, collapse = " + "))),
+adaboost_tree <- train(
+                       formula(paste0("Pobre ~", paste0(X_2, collapse = " + "))),
                        data = train, 
-                       method = "glm",
+                       method = "AdaBoost.M1",  # para implementar el algoritmo antes descrito
                        trControl = ctrl,
-                       family = "binomial")
+                       metric = "ROC",
+                       tuneGrid = adagrid
+)
 
+adaboost_tree
 
- logit_acc_1 = logit_1$results$Accuracy; logit_acc_1
-
-set.seed(9873)
-logit_2 =  train(
-  formula(paste0("Pobre ~", paste0(X_2, collapse = " + "))),
-  data = train, 
-  method = "glm",
-  trControl = ctrl,
-  family = "binomial")
-
-
- logit_acc_2 = logit_2$results$Accuracy; logit_acc_2
-
-set.seed(9873)
-logit_3 =  train(
-  formula(paste0("Pobre ~", paste0(X_3, collapse = " + "))),
-  data = train, 
-  method = "glm",
-  trControl = ctrl,
-  family = "binomial")
-
-
- logit_acc_3 = logit_3$results$Accuracy; logit_acc_3
-
-set.seed(9873)
-logit_4 =  train(
-  formula(paste0("Pobre ~", paste0(X_4, collapse = " + "))),
-  data = train, 
-  method = "glm",
-  trControl = ctrl,
-  family = "binomial")
-
- logit_acc_4 = logit_4$results$Accuracy; logit_acc_4
-
-set.seed(9873)
-logit_5 =  train(
-  formula(paste0("Pobre ~", paste0(X_5, collapse = " + "))),
-  data = train, 
-  method = "glm",
-  trControl = ctrl,
-  family = "binomial")
-
- logit_acc_5 = logit_5$results$Accuracy; logit_acc_5
-
-set.seed(9873)
-logit_6 =  train(
-   formula(paste0("Pobre ~", paste0(X_6, collapse = " + "))),
-   data = train, 
-   method = "glm",
-   trControl = ctrl,
-   family = "binomial")
- 
-logit_acc_6 = logit_6$results$Accuracy; logit_acc_6
- 
- 
-logit_acc_1
-logit_acc_2
-logit_acc_3
-logit_acc_4
-logit_acc_5
-logit_acc_6
-
-#------------------------------------------------------------------------------#
-# Resultados para Kaggle
-#------------------------------------------------------------------------------#
-
-predictSample = test   %>% 
-                mutate(pobre_lab = predict(logit_6, newdata = test, type = "raw")    ## predicted class labels
-                )  %>% select(id, pobre_lab)
-
-head(predictSample)
-
-predictSample = predictSample %>% 
-                mutate(pobre = ifelse(pobre_lab == "Si", 1, 0)) %>% 
-                select(id, pobre)
-
-head(predictSample)
-
-template = read.csv(file.path(raw_path, "sample_submission.csv"))             
-head(template)
-                
-table(predictSample$pobre)
-
-
-# Replace '.' with '_' in the numeric values converted to strings
-# lambda_str <- gsub( "\\.", "_", as.character(round(logit_4$bestTune$lambda, 4)))
-# alpha_str <- gsub("\\.", "_", as.character(logit_4$bestTune$alpha))
-
-name = paste0(
-  "Logit_3",
-  ".csv") 
-
-write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
 
 
