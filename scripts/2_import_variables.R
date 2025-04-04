@@ -198,7 +198,7 @@ test <- pre_test %>%
 # Up sampling para manejar clase imbalanceada
 # Proporcion de la clase minoritaria = 20% -> Desbalance moderado
   set.seed(1103)
-  upSampledTrain  <- upSample(x = train,
+  upSampledTrain  <- upSample(x = train %>% select(-Pobre),
                              y = train$Pobre,
                              yname = "Pobre")
   dim(train)

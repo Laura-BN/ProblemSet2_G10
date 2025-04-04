@@ -13,9 +13,9 @@ test_raw  <- readRDS(file.path(stores_path, "test_data.rds"))
 
 
 # 2. PREPROCESAMIENTO ----------------------------------------------------------
-
+colnames(up_train_raw)
 # Eliminar algunas variables que no entran en el modelo
-train_raw <- train_raw %>% select(-ends_with("_z"))
+train_raw <- up_train_raw %>% select(-ends_with("_z"))
 test_raw <- test_raw %>% select(-ends_with("_z"))
 
 # Asegurar que Pobre es un factor con niveles correctos
