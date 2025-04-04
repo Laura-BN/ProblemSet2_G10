@@ -57,12 +57,14 @@ p_load(tidyverse,
        boot,
        DescTools,
        Metrics,
+       MLmetrics,
        rpart,
        rpart.plot,
        ipred,
-       ranger,
-       pROC) 
-
+       ranger, 
+       ggplot2, 
+       randomForest, 
+       adabag)
 
 #----------------------------------------------
 # Ejecutar scripts
