@@ -64,7 +64,8 @@ p_load(tidyverse,
        ranger, 
        ggplot2, 
        randomForest, 
-       adabag)
+       adabag,
+       pROC)
 
 #----------------------------------------------
 # Ejecutar scripts
