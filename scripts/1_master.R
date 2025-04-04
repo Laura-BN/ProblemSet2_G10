@@ -60,7 +60,8 @@ p_load(tidyverse,
        rpart,
        rpart.plot,
        ipred,
-       ranger) 
+       ranger,
+       pROC) 
 
 
 #----------------------------------------------

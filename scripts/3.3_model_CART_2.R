@@ -11,9 +11,15 @@ up_train_raw <- readRDS(file.path(stores_path, "upsampled_train_data.rds"))
 train_raw <- readRDS(file.path(stores_path, "train_data.rds"))
 test_raw  <- readRDS(file.path(stores_path, "test_data.rds"))
 
+
+# 2. PREPROCESAMIENTO ----------------------------------------------------------
+
 # Eliminar algunas variables que no entran en el modelo
 train_raw <- train_raw %>% select(-ends_with("_z"))
 test_raw <- test_raw %>% select(-ends_with("_z"))
+
+# Asegurar que Pobre es un factor con niveles correctos
+train_raw$Pobre <- factor(train_raw$Pobre, levels = c("Pobre", "No_pobre"))
 
 # Configuracion inicial: utilizar como referencia "Pobre" para la variable Pobre
 train_raw <- train_raw  %>% mutate(Pobre = relevel(Pobre, ref="Pobre"))
@@ -24,27 +30,28 @@ train_raw <- train_raw  %>% mutate(Pobre = relevel(Pobre, ref="Pobre"))
 # Establecer semillar
 set.seed(91519) 
 
+# Dividir datos en entrenamiento y validación
+
 inTrain <- createDataPartition(
           y = train_raw$Pobre, ## La variable dependiente u objetivo 
           p = .7, ## Usamos 70%  de los datos en el conjunto de entrenamiento 
           list = FALSE)
 
-
-train <- train_raw[ inTrain,]
-test  <- train_raw[-inTrain,]
+train <- train_raw[inTrain, ]
+validation <- train_raw[-inTrain, ]
 
 # Verificar la distribucion 
 table(train$Pobre)
-table(test$Pobre)
+table(validation$Pobre)
 
 
-# 3. CONSTRUIR EL ARBOL --------------------------------------------------------
+# 4. CONSTRUIR EL ARBOL DE DECISION COMPLEJO -----------------------------------
 
-# Crear el arbol lo más complejo posible
+# Crear el arbol complejo
 
-complex_tree <- rpart(Pobre ~ jefe_edad + jefe_edad2 + jefe_mujer + 
-                        N_personas + hacinamiento + N_ocupados + N_inactivos + N_desocupados +
-                        N_menores + N_mayor_dependiente + max_nivel_educ + Clase + Dominio, 
+complex_tree <- rpart(Pobre ~ jefe_edad + jefe_mujer + jefe_edad2 + jefe_salud_sub +
+                        N_personas + hacinamiento + N_ocupados + N_inactivos +
+                        N_menores + N_mayor_dependiente + max_nivel_educ + Clase, 
                       data = train,
                       method = "class",
                       cp = 0,  # complexity parameter, nuestro alpha
@@ -63,17 +70,17 @@ rpart.plot::prp(
             box.palette = "-RdYlGn"  # Paleta de colores para las hojas
             )
 
-# 4. PODAR EL ARBOL ------------------------------------------------------------
+# 5. PODAR EL ARBOL USANDO VALIDACION CRUZADA ----------------------------------
 
 # Establecer los parametros del proceso de validación cruzada
 
   fiveStats <- function(...) {
-    c(
-      twoClassSummary(...),
-      defaultSummary(...)
-    )
-  }
-  ## Para usar ROC) (u otras más) para tuning
+                c(
+                  twoClassSummary(...),
+                  defaultSummary(...)
+                )
+              }
+  ## Para usar ROC (u otras más) para tuning
   
   ctrl<- trainControl(method = "cv",
                       number = 5,
@@ -85,19 +92,22 @@ rpart.plot::prp(
   # especificamos la grilla de los alphas
   grid <- expand.grid(cp = seq(0, 0.03, 0.001))
 
-  cv_tree <- train(Pobre ~ jefe_edad + jefe_edad2 + jefe_mujer + 
-                     N_personas + hacinamiento + N_ocupados + N_inactivos + N_desocupados +
-                     N_menores + N_mayor_dependiente + max_nivel_educ + Clase + Dominio,
+  cv_tree <- train(Pobre ~ jefe_edad  + jefe_mujer + jefe_edad2 +
+                     N_personas + hacinamiento + N_ocupados + N_inactivos +
+                     N_menores + N_mayor_dependiente + max_nivel_educ + Clase,
                    data = train,
                    method = "rpart", 
                    trControl = ctrl, 
                    tuneGrid = grid, 
-                   metric= "ROC"
+                   metric= "ROC",
+                   minbucket = 20 # Numero minimo de obs en hojas
                   )
+  
   cv_tree
   
-  # Ver el valor del alfa que maximiza el AUC
-  cv_tree$bestTune$cp
+  # Mejor valor del alfa que maximiza el AUC
+  best_cp <- cv_tree$bestTune$cp
+  best_cp
 
 # Graficar el arbol final
   rpart.plot::prp(
@@ -110,21 +120,107 @@ rpart.plot::prp(
             box.palette = "-RdYlGn"  # Paleta de colores para las hojas
             )
   
+  
+# 6. EVALUACIÓN EN VALIDACIÓN --------------------------------------------------
+  
+  # Predecir en el conjunto de validación
+  pred_prob_val <- predict(cv_tree, newdata = validation, type = "prob")
+  
+  # Clasificación basada en un umbral de 0.5
+  validation$Pobre_Predicho <- ifelse(pred_prob_val[,1] >= 0.5, "Pobre", "No_pobre")
+  
+  # Calcular el AUC
+  auc_val <- roc(validation$Pobre, pred_prob_val[,1])$auc
+  print(paste("AUC en validación:", auc_val))
+  
+  
+
+# 7. REDICCIÓN FINAL PARA KAGGLE ------------------------------------------
+  
+  # Predecir en test_raw
+  pred_prob_test <- predict(cv_tree, newdata = test_raw, type = "prob")
+  
+  # Asignar predicciones
+  test_raw$pobre <- ifelse(pred_prob_test[,1] >= 0.5, "Pobre", "No_pobre")
+  
+  # Verificar la distribucion 
+  table(test_raw$Pobre)
+  
+  # Ajustar la base para enviar
+  predictSample <- test_raw %>% 
+                select(id, pobre) %>%
+                mutate(pobre=ifelse(pobre=="Pobre",1,0))
+  
+  # Guardar la base de datos
+  name <- paste0("CART_alfa_", best_cp, ".csv") 
+  write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
+  
+  # Verificar la distribucion 
+  table(predictSample$pobre)
+  
+  
+  
+  #######################################################
+  
+  predictSample <- test_subset %>% 
+    mutate(pobre_pred = predict(model2, newdata = test_subset, type = "raw")) %>% 
+    select(id, pobre_pred) # alpha= 0.6 and lambda = 0.01097
+  
+  predictSample <- predictSample %>% 
+    mutate(pobre=ifelse(pobre_pred=="Si",1,0)) %>% 
+    select(id,pobre)
+  
+  table(predictSample$pobre) #24404 
+  
+  
+  
+  #######################################################
+  
 # Calcular el AUC sobre los datos de prueba
   
   pobre <- ifelse(test$Pobre=="Si", 1, 0) #Volder default en test  numérico
   
   pred_prob <- predict(cv_tree, newdata = test, type = "prob")   
 
-  aucval_cvtree <- Metrics::auc(actual = pobre, predicted = pred_prob[,2])
+  aucval_cvtree <- Metrics::auc(actual = pobre, predicted = pred_prob[,1])
   aucval_cvtree
   
-  length(pobre)  
+  roc_obj <- roc(pobre, pred_prob[,1])
+  auc(roc_obj)
   
+  colnames(pred_prob)  # Verifica los nombres de las columnas
+  
+  summary(pred_prob[,2])  # Revisa el rango de valores de las predicciones
+  hist(pred_prob[,2])  # Verifica si todas las probabilidades son altas
+  
+  
+  
+  aucval_cvtree <- Metrics::auc(actual = pobre, predicted = pred_prob[,2])
+  print(aucval_cvtree)
+  
+  
+  length(pobre)  
   length(pred_prob[,2])
   
-  
+  table(test$Pobre)  # Verifica cuántos "Si" y "No" hay en test
+  class(pobre)  # Debe ser "numeric"
+  sum(is.na(pobre))  # Si hay valores NA, eso puede causar problemas
 
+  head(pred_prob)  # Muestra las primeras filas
+  dim(pred_prob)  # Verifica las dimensiones
+  sum(is.na(pred_prob))  # Revisa si hay valores NA
+  
+  
+  table(pobre) 
+  
+  summary(pred_prob[,2])  # Muestra mínimo, máximo, media, etc.
+  length(unique(pred_prob[,2]))  # Cantidad de valores únicos
+  
+  
+  summary(pred_prob[,2])  # Revisa el rango de valores de las probabilidades
+  hist(pred_prob[,2])  # Gráfica de las predicciones
+  
+  
 # -----------
 
 # Obtener alfa que minimiza el error
@@ -143,7 +239,7 @@ rpart.plot::prp(
 
 # Graficar el arbol con alfa que minimiza el error (podar el arbol)
 
-arbol <- rpart(Pobre ~ jefe_edad + jefe_edad2 + jefe_mujer + 
+arbol <- rpart(Pobre ~ jefe_edad + jefe_mujer + jefe_edad2 +
                         N_personas + hacinamiento + N_ocupados + N_inactivos + N_desocupados +
                         N_menores + N_mayor_dependiente + max_nivel_educ + Clase, 
                       data = train,
