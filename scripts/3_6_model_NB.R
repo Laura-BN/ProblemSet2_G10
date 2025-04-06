@@ -49,15 +49,6 @@ model1  <- train(
 )
 model1
 
-predictSample <- test %>% 
-  mutate(pobre_pred = predict(model1, newdata = test, type = "raw")) %>% 
-  select(id, pobre_pred) 
-
-predictSample <- predictSample %>% 
-  mutate(pobre=ifelse(pobre_pred=="Pobre",1,0)) %>% 
-  select(id,pobre)
-
-table(predictSample$pobre) 
 
 #------------------------------------------------------------------------------#
 # Resultados para Kaggle

@@ -117,6 +117,14 @@ model2
 model3
 model4
 
+model4$results %>%
+  dplyr::filter(alpha == model4$bestTune$alpha,
+                lambda == model4$bestTune$lambda)
+
+# table(train$jefe_pension)
+# table(train$jefe_salud_sub)
+
+
 #------------------------------------------------------------------------------#
 # Resultados para Kaggle
 #------------------------------------------------------------------------------#
