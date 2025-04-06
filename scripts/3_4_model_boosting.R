@@ -61,10 +61,12 @@ test = test %>% mutate(
 
 sapply(train, class)
 
+table(train$jefe_salud_sub)
+
 X_2 = c("hacinamiento_f", 
         "Clase",
         "jefe_mujer_f", 
-        "prop_ocu_pet_f", 
+        "N_ocupados", 
         "jefe_mayor_f",
         "jefe_nivel_educ",
         "Mayor_dependiente_f", 
