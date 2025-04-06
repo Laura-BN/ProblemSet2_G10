@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------------------//
 # Modelo Random Forest with Cross validation
 # Problem Set 2 G10 - BDML 202501
-# Fecha actualización: 04 de abril de 2025
+# Fecha actualización: 05 de abril de 2025
 #-----------------------------------------------------------------------------//
 
 
@@ -61,11 +61,11 @@ table(validation$Pobre)
 # Crear el arbol complejo
 rf<- ranger::ranger(
       Pobre ~ jefe_edad + jefe_mujer + jefe_edad2 + jefe_salud_sub +
-        N_personas + hacinamiento + N_ocupados + N_inactivos +
-        N_menores + N_mayor_dependiente + max_nivel_educ + Clase +
-        inter_haci_tam, 
+              N_personas + hacinamiento + N_ocupados + N_inactivos +
+              N_menores + N_mayor_dependiente + max_nivel_educ + Clase +
+              inter_haci_tam, 
       data = train,
-      num.trees= 1000, ## Numero de bootstrap samples y arboles a estimar. Default 500  
+      num.trees= 500, ## Numero de bootstrap samples y arboles a estimar. Default 500  
       mtry= 4,   # N. var aleatoriamente seleccionadas en cada partición
       min.node.size  = 1, ## Numero minimo de observaciones en un nodo
       importance="impurity") 
@@ -126,15 +126,15 @@ tuneGrid <- expand.grid(
 # Entrenar modelo con tuning
 rf_tuned <- train(
             Pobre ~ jefe_edad + jefe_mujer + jefe_edad2 + jefe_salud_sub +
-              N_personas + hacinamiento + N_ocupados + N_inactivos +
-              N_menores + N_mayor_dependiente + max_nivel_educ + Clase + 
-              inter_haci_tam,
+                    N_personas + hacinamiento + N_ocupados + N_inactivos +
+                    N_menores + N_mayor_dependiente + max_nivel_educ + Clase + 
+                    inter_haci_tam,
             data = train,
             method = "ranger",
             trControl = ctrl,
             tuneGrid = tuneGrid,
             metric = "ROC",
-            num.trees = 1000,
+            num.trees = 500,
             importance = "impurity"
             )
 
@@ -197,5 +197,8 @@ write.csv(submission_tuned, file = file.path(stores_path, name_tuned), row.names
 print(paste("Archivo guardado:", name_tuned))
 
 
+#Tuning parameter 'splitrule' was held constant at a value of gini
+#ROC was used to select the optimal model using the largest value.
+#The final values used for the model were mtry = 8, splitrule = gini and min.node.size = 1.
 
  

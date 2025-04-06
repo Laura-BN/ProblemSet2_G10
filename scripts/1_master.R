@@ -36,7 +36,6 @@ if (!require(crayon)) install.packages("crayon", dependencies = TRUE)
 library(crayon)
 
 
-
 # Cargar paquetes necesarios
 p_load(tidyverse, 
        rvest,
