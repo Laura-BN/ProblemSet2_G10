@@ -130,14 +130,10 @@ aucval_bag = Metrics::auc(
              predicted = phat.bag)
 aucval_bag
 
-# 1. Convertir probabilidades a clases predichas (0/1)
-yhat.bag = ifelse(phat.bag >= 0.5, 1, 0)  # umbral puede ajustarse si deseas
-
-# 2. Calcular el F1 score
-library(MLmetrics)
+# Calcular el F1
+yhat.bag = ifelse(phat.bag >= 0.5, 1, 0) 
 F1_Score(y_pred = yhat.bag, y_true = Pobre_num, positive = "1")
 
-?MLmetrics
 
 
 
