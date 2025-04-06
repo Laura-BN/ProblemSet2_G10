@@ -1,9 +1,8 @@
 #-----------------------------------------------------------------------------//
-# Modelo CART
+# Modelo Random Forest
 # Problem Set 2 G10 - BDML 202501
-# Fecha actualización: 04 de abril de 2025
+# Fecha actualización: 05 de abril de 2025
 #-----------------------------------------------------------------------------//
-
 
 # 1. IMPORTAR DATOS ------------------------------------------------------------
 
@@ -15,8 +14,17 @@ test_raw  <- readRDS(file.path(stores_path, "test_data.rds"))
 # 2. PREPROCESAMIENTO ----------------------------------------------------------
 
 # Eliminar algunas variables que no entran en el modelo
-train_raw <- up_train_raw %>% select(-"Pobre.1", -ends_with("_z"))
+train_raw <- up_train_raw %>% select(-ends_with("_z"))
 test_raw <- test_raw %>% select(-ends_with("_z"))
+
+# Crear algunas interacciones
+train_raw <- train_raw %>% 
+              mutate(inter_edad_mujer = jefe_mujer * jefe_edad,
+                     inter_haci_tam = N_personas * hacinamiento)
+
+test_raw <- test_raw %>% 
+            mutate(inter_edad_mujer = jefe_mujer * jefe_edad,
+                   inter_haci_tam = N_personas * hacinamiento)
 
 # Asegurar que Pobre es un factor con niveles correctos
 train_raw$Pobre <- factor(train_raw$Pobre, levels = c("Pobre", "No_pobre"))
@@ -24,10 +32,13 @@ train_raw$Pobre <- factor(train_raw$Pobre, levels = c("Pobre", "No_pobre"))
 # Configuracion inicial: utilizar como referencia "Pobre" para la variable Pobre
 train_raw <- train_raw  %>% mutate(Pobre = relevel(Pobre, ref="Pobre"))
 
+# Crear variable numerica en train_raw
+train_raw$pobre_num <- ifelse(train_raw$Pobre == "Pobre", 1, 0)
+
 
 # 3. DIVISION DE LA MUESTRA ----------------------------------------------------
 
-# Establecer semillar
+# Establecer semilla
 set.seed(91519) 
 
 # Dividir datos en entrenamiento y validación
@@ -45,108 +56,80 @@ table(train$Pobre)
 table(validation$Pobre)
 
 
-# 4. CONSTRUIR EL ARBOL DE DECISION COMPLEJO -----------------------------------
+# 4. CONSTRUIR EL MODELO RANDOM FOREST ______-----------------------------------
 
 # Crear el arbol complejo
+rf<- ranger::ranger(
+      Pobre ~ jefe_edad + jefe_mujer + jefe_edad2 + jefe_salud_sub +
+        N_personas + hacinamiento + N_ocupados + N_inactivos +
+        N_menores + N_mayor_dependiente + max_nivel_educ + Clase +
+        inter_edad_mujer + inter_haci_tam, 
+      data = train,
+      num.trees= 500, ## Numero de bootstrap samples y arboles a estimar. Default 500  
+      mtry= 4,   # N. var aleatoriamente seleccionadas en cada partición
+      min.node.size  = 1, ## Numero minimo de observaciones en un nodo
+      importance="impurity") 
+rf
 
-complex_tree <- rpart(Pobre ~ jefe_edad + jefe_mujer + jefe_edad2 + jefe_salud_sub +
-                        N_personas + hacinamiento + N_ocupados + N_inactivos +
-                        N_menores + N_mayor_dependiente + max_nivel_educ + Clase, 
-                      data = train,
-                      method = "class",
-                      cp = 0,  # complexity parameter, nuestro alpha
-                      minbucket = 15 # Numero minimo de obs en hojas
-                      )
+# Mejor modelo
+print(rf)
+plot(rf)
 
+# 5. PREDICCIONES EN VALIDACION (usando votos de los arboles) ------------------
 
-# Utilizamos la función prp del paquete rpart.plot para graficar el árbol de decisión
-rpart.plot::prp(
-            complex_tree,      
-            under = TRUE,      # Mostrar la información debajo de cada nodo
-            branch.lty = 2,    # Tipo de línea para las ramas (2 = línea punteada)
-            yesno = 2,         # Mostrar indicadores de "sí"/"no"
-            faclen = 0,        # Longitud de la abreviación para niveles de factores (0 = sin abreviación)
-            varlen = 10,       # Longitud máxima para abreviar los nombres de variables
-            box.palette = "-RdYlGn"  # Paleta de colores para las hojas
-            )
-
-# 
-
-# 5. PODAR EL ARBOL USANDO MEJOR CP --------------------------------------------
-
-# Ver tabla de costos y mejor cp
-printcp(complex_tree)  
-
-# Graficar el error vs cp
-plotcp(complex_tree)
-
-# Elegir el cp Óptimo
-best_cp <- complex_tree$cptable[which.min(complex_tree$cptable[, "xerror"]), "CP"]
-best_cp
+# Predecimos con todos los arboles individualmente
+pred_raw <-predict(rf, data = validation, predict.all = TRUE)$predictions
 
 
-# Crear el arbol complejo
+# Convertimos a data frame para operar con votos
+pred.rf <- as.data.frame(pred_raw)
 
-cp_tree <- rpart(Pobre ~ jefe_edad + jefe_mujer + jefe_edad2 + jefe_salud_sub +
-                    N_personas + hacinamiento + N_ocupados + N_inactivos +
-                    N_menores + N_mayor_dependiente + max_nivel_educ + Clase, 
-                  data = train,
-                  method = "class",
-                  cp = best_cp,  # complexity parameter, nuestro alpha
-                  minbucket = 15 # Numero minimo de obs en hojas
-                  )
-
-# Utilizamos la función prp del paquete rpart.plot para graficar el arbol con cp
-rpart.plot::prp(
-            cp_tree,      
-            under = TRUE,      # Mostrar la información debajo de cada nodo
-            branch.lty = 2,    # Tipo de línea para las ramas (2 = línea punteada)
-            yesno = 2,         # Mostrar indicadores de "sí"/"no"
-            faclen = 0,        # Longitud de la abreviación para niveles de factores (0 = sin abreviación)
-            varlen = 10,       # Longitud máxima para abreviar los nombres de variables
-            box.palette = "-RdYlGn"  # Paleta de colores para las hojas
-          )
+# Contamos votos por clase "Pobre" (asumimos codificada como 1)
+ntrees <- ncol(pred.rf)
+phat_rf_val <- rowSums(pred.rf == 1) / ntrees
 
 
-# 6. EVALUACIÓN EN VALIDACIÓN --------------------------------------------------
-  
-  # Predecir en el conjunto de validación
-  pred_prob_val <- predict(cp_tree, newdata = validation, type = "prob")
-  
-  # Clasificación basada en un umbral de 0.5
-  validation$Pobre_Predicho <- ifelse(pred_prob_val[,1] >= 0.5, "Pobre", "No_pobre")
-  
-  # Calcular el AUC
-  auc_val <- roc(validation$Pobre, pred_prob_val[,1])$auc
-  print(paste("AUC en validación:", auc_val))
-  
-  
+# 6. CALCULAR AUC --------------------------------------------------------------
 
-# 7. REDICCIÓN FINAL PARA KAGGLE ------------------------------------------
-  
-  # Predecir en test_raw
-  pred_prob_test <- predict(cp_tree, newdata = test_raw, type = "prob")
-  
-  # Asignar predicciones
-  test_raw$pobre <- ifelse(pred_prob_test[,1] >= 0.5, "Pobre", "No_pobre")
-  
-  # Verificar la distribucion 
-  table(test_raw$Pobre)
-  
-  # Ajustar la base para enviar
-  predictSample <- test_raw %>% 
-                select(id, pobre) %>%
-                mutate(pobre=ifelse(pobre=="Pobre",1,0))
-  
-  # Guardar la base de datos
-  name <- paste0("CART_alfa_", best_cp, ".csv") 
-  write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
-  
-  # Verificar la distribucion 
-  table(predictSample$pobre)
-  
-  
-  
+# Crear vector numérico para la variable dependiente real
+actual_val <- ifelse(validation$Pobre == "Pobre", 1, 0)
+
+# AUC
+aucval_rf <- Metrics::auc(
+                          actual = actual_val, 
+                          predicted = phat_rf_val
+                          )
+
+print(paste("AUC en validación (votos RF):", round(aucval_rf, 5)))
 
 
- 
+# 7. PREDICCIONES EN TEST PARA KAGGLE ------------------------------------------
+
+# Predecimos usando votos de los árboles
+pred_test_raw <- predict(rf, data = test_raw, predict.all = TRUE)$predictions
+pred_test_df <- as.data.frame(pred_test_raw)
+
+# Probabilidad estimada de ser "Pobre"
+phat_rf_test <- rowSums(pred_test_df == 1) / ntrees
+
+# Clasificación con umbral 0.5
+test_raw$pobre <- ifelse(phat_rf_test >= 0.5, "Pobre", "No_pobre")
+
+# Crear base para envío
+predictSample <- test_raw %>% 
+  select(id, pobre) %>%
+  mutate(pobre = ifelse(pobre == "Pobre", 1, 0))
+
+# Nombre del archivo según parámetros usados
+name <- paste0("RF_ntrees_", rf$num.trees,
+               "_mtry_", rf$mtry,
+               "_minNode_", rf$min.node.size,
+               ".csv")
+
+# Guardar archivo
+write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
+
+# Verificar distribución y nombre
+print(table(predictSample$pobre))
+print(paste("Archivo guardado:", name))
+

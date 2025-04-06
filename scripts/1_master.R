@@ -65,7 +65,8 @@ p_load(tidyverse,
        ggplot2, 
        randomForest, 
        adabag,
-       pROC)
+       pROC,
+       recipes)
 
 #----------------------------------------------
 # Ejecutar scripts

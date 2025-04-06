@@ -34,7 +34,7 @@ train_hogares  <- read_csv(unz(zip_path, "train_hogares.csv"))
 
 # 3. CREAR NUEVAS VARIABLES EN LA BASE PERSONAS --------------------------------
 
-# Variable para la base train personas
+# Variables para la base train personas
 
 train_personas_vars <- train_personas %>% 
                   mutate(
@@ -59,7 +59,7 @@ train_personas_vars <- train_personas %>%
                              jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
                              nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu)
 
-
+# Variables para la base test personas
 test_personas_vars <- test_personas %>% 
                       mutate(
                         pt = 1L,
@@ -164,6 +164,11 @@ pre_test <- test_hogares_vars %>%
             left_join(test_personas_hogar, by = "id") %>%
             select(-Nper)
 
+# Eliminar NAs
+pre_train$jefe_salud_sub[is.na(pre_train$jefe_salud_sub)] <- 1
+pre_test$jefe_salud_sub[is.na(pre_test$jefe_salud_sub)] <- 1
+
+
 # Convertir las variables categoricas y obtener la base final
 
 train <- pre_train %>%
@@ -188,6 +193,7 @@ test <- pre_test %>%
                Clase = factor(Clase,levels=c(1:2), labels=c('Cabecera','Resto'))
               )
 
+
 # Normalizar variables numericas
   train <- train %>%
     mutate(across(where(is.numeric), ~ scale(.)[, 1], .names = "{.col}_z"))
@@ -205,13 +211,12 @@ test <- pre_test %>%
   dim(upSampledTrain)
   table(upSampledTrain$Pobre)
 
-# 5. GUARDAR BASES DE DATOS ----------------------------------------------------
+# 5. GUARDAR BASES DE DATOS -train_personas_vars$jefe_salud_sub[is.na(train_personas_vars$jefe_salud_sub)] <- 1---------------------------------------------------
 
 # Guardar los archivos en formato .rds en la carpeta stores
 saveRDS(train, file.path(stores_path, "train_data.rds"))
 saveRDS(test, file.path(stores_path, "test_data.rds"))
 saveRDS(upSampledTrain, file.path(stores_path, "upsampled_train_data.rds"))
-
 
 # Mensaje de proceso realizado
 message(green("✅ Bases guardadas en "), green(stores_path))
