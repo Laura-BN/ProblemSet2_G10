@@ -64,8 +64,8 @@ rf<- ranger::ranger(
         inter_haci_tam, 
       data = train,
       num.trees= 2000, ## Numero de bootstrap samples y arboles a estimar. Default 500  
-      mtry= 4,   # N. var aleatoriamente seleccionadas en cada partición
-      min.node.size  = 1, ## Numero minimo de observaciones en un nodo
+      mtry= 6,   # N. var aleatoriamente seleccionadas en cada partición
+      min.node.size  = 2, ## Numero minimo de observaciones en un nodo
       importance="impurity") 
 rf
 
@@ -100,7 +100,19 @@ aucval_rf <- Metrics::auc(
                           predicted = phat_rf_val
                           )
 
+# Clasificación con umbral 0.5 para validación
+pred_class_val <- ifelse(phat_rf_val >= 0.5, 1, 0)
+
+# F1 Score
+f1_val <- F1_Score(y_true = actual_val, y_pred = pred_class_val, positive = "1")
+
+# Matriz de confusión
+cm <- confusionMatrix(as.factor(pred_class_val), as.factor(actual_val), positive = "1")
+
+# Imprimir métricas
 print(paste("AUC en validación (votos RF):", round(aucval_rf, 5)))
+print(cm)
+cat("F1 Score en validación (umbral 0.5):", round(f1_val, 4), "\n")
 
 
 # 7. PREDICCIONES EN TEST PARA KAGGLE ------------------------------------------
