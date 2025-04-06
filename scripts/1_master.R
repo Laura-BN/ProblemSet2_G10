@@ -65,7 +65,9 @@ p_load(tidyverse,
        randomForest, 
        adabag,
        pROC,
-       recipes)
+       recipes,
+       vip,
+       MLmetrics)
 
 #----------------------------------------------
 # Ejecutar scripts

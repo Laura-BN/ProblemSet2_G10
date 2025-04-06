@@ -19,12 +19,10 @@ test_raw <- test_raw %>% select(-ends_with("_z"))
 
 # Crear algunas interacciones
 train_raw <- train_raw %>% 
-              mutate(inter_edad_mujer = jefe_mujer * jefe_edad,
-                     inter_haci_tam = N_personas * hacinamiento)
+              mutate(inter_haci_tam = N_personas * hacinamiento)
 
 test_raw <- test_raw %>% 
-            mutate(inter_edad_mujer = jefe_mujer * jefe_edad,
-                   inter_haci_tam = N_personas * hacinamiento)
+            mutate(inter_haci_tam = N_personas * hacinamiento)
 
 # Asegurar que Pobre es un factor con niveles correctos
 train_raw$Pobre <- factor(train_raw$Pobre, levels = c("Pobre", "No_pobre"))
@@ -63,9 +61,9 @@ rf<- ranger::ranger(
       Pobre ~ jefe_edad + jefe_mujer + jefe_edad2 + jefe_salud_sub +
         N_personas + hacinamiento + N_ocupados + N_inactivos +
         N_menores + N_mayor_dependiente + max_nivel_educ + Clase +
-        inter_edad_mujer + inter_haci_tam, 
+        inter_haci_tam, 
       data = train,
-      num.trees= 500, ## Numero de bootstrap samples y arboles a estimar. Default 500  
+      num.trees= 2000, ## Numero de bootstrap samples y arboles a estimar. Default 500  
       mtry= 4,   # N. var aleatoriamente seleccionadas en cada partición
       min.node.size  = 1, ## Numero minimo de observaciones en un nodo
       importance="impurity") 
@@ -73,7 +71,9 @@ rf
 
 # Mejor modelo
 print(rf)
-plot(rf)
+
+# Graficar modelo
+vip(rf)
 
 # 5. PREDICCIONES EN VALIDACION (usando votos de los arboles) ------------------
 

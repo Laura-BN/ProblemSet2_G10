@@ -146,6 +146,8 @@ plot(rf_tuned)
 
 # 9. VALIDACIÓN ---------------------------------------------------------------
 
+set.seed(91519)
+
 # Predecir la probabilidad de ser "Pobre"
 pred_prob <- predict(rf_tuned, newdata = train, type = "prob")[, "Pobre"]
 
@@ -171,10 +173,13 @@ print(auc_val)
 # Predecimos en test
 pred_prob_test <- predict(rf_tuned, newdata = test_raw, type = "prob")[, "Pobre"]
 
+# Convertimos a clases 1 y 0
+pred_class_test <- ifelse(pred_prob_test >= 0.5, 1, 0)
+
 # Crear predicción final
 submission_tuned <- test_raw %>%
                     select(id) %>%
-                    mutate(pobre = pred_prob_test)
+                    mutate(pobre = pred_class_test)
 
 # --------- NOMBRE DEL ARCHIVO SEGÚN PARÁMETROS TUNEADOS ------------
 
