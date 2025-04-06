@@ -33,6 +33,18 @@ X_3 <- c("Clase", "jefe_mujer", "hacinamiento_z",
          "jefe_mujer:jefe_nivel_educ", 
          "N_menores_z:jefe_mujer")
 
+X_4 = c("poly(hacinamiento_z, 2, raw=TRUE)", 
+        "Clase",
+        "jefe_mujer", 
+        "prop_ocu_pet", 
+        "jefe_edad_z",
+        "jefe_edad2_z", 
+        "poly(jefe_nivel_educ, 2 ,raw=TRUE)",
+        "N_mayor_dependiente_z", 
+        "prop_ocu_pet_z",
+        "jefe_pension", 
+        "poly(N_menores_z, 2, raw = TRUE):jefe_mujer")
+
 #Definir función de evaluación personalizada 
 multiStats <- function(...) c(twoClassSummary(...), defaultSummary(...), prSummary(...))
 
@@ -88,9 +100,22 @@ model3  <- train(
   tuneGrid = grid
 )
 
+set.seed(1234)
+model4  <- train(
+  formula(paste0("Pobre ~", paste0(X_4, collapse = " + "))),
+  data = train,  
+  method = "glmnet",
+  family = "binomial",
+  trControl = ctrl,  
+  metric = "F",  
+  tuneGrid = grid
+)
+
+
 model1
 model2 
 model3
+model4
 
 #------------------------------------------------------------------------------#
 # Resultados para Kaggle
@@ -98,7 +123,7 @@ model3
 
 #Calcular las predicciones para la base de datos test
 predictSample <- test %>% 
-  mutate(pobre_pred = predict(model1, newdata = test, type = "raw")) %>% 
+  mutate(pobre_pred = predict(model4, newdata = test, type = "raw")) %>% 
   select(id, pobre_pred) 
 
 predictSample <- predictSample %>% 
@@ -108,8 +133,8 @@ predictSample <- predictSample %>%
 table(predictSample$pobre) 
 
 #Guardar CSV
-lambda_str <- gsub("[.]", "_", as.character(round(model1$bestTune$lambda, 4)))
-alpha_str <- gsub("[.]", "_", as.character(model1$bestTune$alpha))
+lambda_str <- gsub("[.]", "_", as.character(round(model4$bestTune$lambda, 4)))
+alpha_str <- gsub("[.]", "_", as.character(model4$bestTune$alpha))
 
 name <- paste0("EN_lambda_", lambda_str, "_alpha_", alpha_str, ".csv") 
 write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
