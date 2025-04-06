@@ -36,7 +36,13 @@ summary(train$prop_ocu_pet)
 summary(train$N_mayor_dependiente)
 table(train$jefe_nivel_educ)
 table(train$jefe_pension)
+table(train$jefe_salud_sub)
+table(train$Pobre)
 
+
+
+# train = train %>% mutate(jefe_salud_sub = ifelse(is.na(jefe_salud_sub) & jefe_pension == "Jefe_af_pension", "Jefe_salud_contributivo", jefe_salud_sub ))
+# test = test %>% mutate(jefe_salud_sub = ifelse(is.na(jefe_salud_sub) & jefe_pension == "Jefe_af_pension", "Jefe_salud_contributivo", jefe_salud_sub ))
 
 train = train %>% mutate(
         Pobre_d        = factor(Pobre_d, levels=c(0,1),labels=c("No","Si")),
@@ -72,7 +78,8 @@ X_2 = c("hacinamiento_f",
         "Mayor_dependiente_f", 
         "prop_ocu_pet_f",
         "jefe_cot_pens", 
-        "N_menores_f")
+        "N_menores_f", 
+        "jefe_salud_sub")
 
 #------------------------------------------------------------------------------#
 # 1. Modelos ----
@@ -83,13 +90,16 @@ X_2 = c("hacinamiento_f",
 #-----------------------
 
 bagged_tree = ranger::ranger(
-              formula(paste0("Pobre ~", paste0(X_2, collapse = " + "))),
+              formula(paste0("Pobre_d ~", paste0(X_2, collapse = " + "))),
               data = train,
               num.trees= 500, ## Numero de bootstrap samples y arboles a estimar. Default 500  
               mtry= 8,   # N. var aleatoriamente seleccionadas en cada partición. Baggin usa todas las vars.
               min.node.size  = 1, ## Numero minimo de observaciones en un nodo para intentar 
             ) 
 bagged_tree
+
+table(train$Pobre)
+table(train$Pobre_d)
 
 # Clacular predicciones
 
@@ -108,7 +118,7 @@ head(tibble(pred.bag_ranger))
 
 # Calcular las probabilidades de Default (promedio todos los árboles)
 ntrees = ncol( pred.bag_ranger )
-phat.bag = rowSums(pred.bag_ranger == 2) / ntrees
+phat.bag = rowSums(pred.bag_ranger == "2") / ntrees
 
 
 length(Pobre_num)
@@ -119,6 +129,16 @@ aucval_bag = Metrics::auc(
              actual = Pobre_num,
              predicted = phat.bag)
 aucval_bag
+
+# 1. Convertir probabilidades a clases predichas (0/1)
+yhat.bag = ifelse(phat.bag >= 0.5, 1, 0)  # umbral puede ajustarse si deseas
+
+# 2. Calcular el F1 score
+library(MLmetrics)
+F1_Score(y_pred = yhat.bag, y_true = Pobre_num, positive = "1")
+
+?MLmetrics
+
 
 
 #-----------------------
@@ -158,6 +178,3 @@ adaboost_tree <- train(
 )
 
 adaboost_tree
-
-
-
