@@ -2,8 +2,8 @@
 # Modelos: Regresión lineal y logit ----
 #------------------------------------------------------------------------------#
 
-# train = readRDS(file.path(stores_path, "upsampled_train_data.rds"))
-train = readRDS(file.path(stores_path, "train_data.rds"))
+train = readRDS(file.path(stores_path, "upsampled_train_data.rds"))
+# train = readRDS(file.path(stores_path, "train_data.rds"))
 test  = readRDS(file.path(stores_path, "test_data.rds"))
 
 colnames(train)
