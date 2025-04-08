@@ -3,7 +3,10 @@
 #------------------------------------------------------------------------------#
 
 train = readRDS(file.path(stores_path, "upsampled_train_data.rds"))
+# train = readRDS(file.path(stores_path, "train_data.rds"))
 test  = readRDS(file.path(stores_path, "test_data.rds"))
+
+intersect(colnames(train), colnames(test))
 
 #---------------------------
 # Ajuste de variables y cols
@@ -39,37 +42,39 @@ table(train$jefe_pension)
 table(train$jefe_salud_sub)
 table(train$Pobre)
 
-
-
-# train = train %>% mutate(jefe_salud_sub = ifelse(is.na(jefe_salud_sub) & jefe_pension == "Jefe_af_pension", "Jefe_salud_contributivo", jefe_salud_sub ))
-# test = test %>% mutate(jefe_salud_sub = ifelse(is.na(jefe_salud_sub) & jefe_pension == "Jefe_af_pension", "Jefe_salud_contributivo", jefe_salud_sub ))
-
 train = train %>% mutate(
         Pobre_d        = factor(Pobre_d, levels=c(0,1),labels=c("No","Si")),
-        hacinamiento_f = factor(ifelse(hacinamiento > 2, 1, 0), labels = c("Si", "No")), # porque es el a lo que se aproxima el 3 cuantil
+        hacinamiento_f = factor(ifelse(hacinamiento > 3, 1, 0), labels = c("Si", "No")), # porque es el a lo que se aproxima el 3 cuantil
         jefe_mayor_f   = factor(ifelse(jefe_edad > 49, 1, 0), labels = c("Si", "No")), # puede ser indicador de que la persona que sostiene el hogar tenga más o menos dinámica laboral
         N_menores_f    = factor(ifelse(N_menores > 1.6, 1, 0), labels = c("Si", "No")), # número promedio hijas/os por mujer en Colombia (podrían ser más grandes pero por practicidad)
         jefe_mujer_f   = factor(ifelse(jefe_mujer == "Jefe_mujer", 1, 0), labels = c("Si", "No")), 
         prop_ocu_pet_f = factor(ifelse(prop_ocu_pet > 0.6, 1, 0), labels = c("Si", "No")), # hogares usualmente 3,3 personas, que trabaje al menos el 60 % (cuantil 3) 
         Mayor_dependiente_f = factor(ifelse(N_mayor_dependiente >= 1, 1, 0), labels = c("Si", "No")),
-        jefe_cot_pens  = factor(ifelse(jefe_pension == "Jefe_af_pension", 1, 0), labels = c("Si", "No"))
+        jefe_cot_pens  = factor(ifelse(jefe_pension == "Jefe_af_pension", 1, 0), labels = c("Si", "No")),
+        jefe_cont_salud  = factor(ifelse(jefe_salud_sub == "Jefe_salud_contributivo", 1, 0), labels = c("Si", "No")), 
+        N_desocupados_f = factor(ifelse(N_desocupados >= 1, 1, 0), labels = c("Si", "No"))
+        
         )
 
 test = test %>% mutate(
-        hacinamiento_f = factor(ifelse(hacinamiento > 2, 1, 0), labels = c("Si", "No")), # porque es el a lo que se aproxima el 3 cuantil
+        hacinamiento_f = factor(ifelse(hacinamiento > 3, 1, 0), labels = c("Si", "No")), # porque es el a lo que se aproxima el 3 cuantil
         jefe_mayor_f   = factor(ifelse(jefe_edad > 49, 1, 0), labels = c("Si", "No")), # puede ser indicador de que la persona que sostiene el hogar tenga más o menos dinámica laboral
         N_menores_f    = factor(ifelse(N_menores > 1.6, 1, 0), labels = c("Si", "No")), # número promedio hijas/os por mujer en Colombia (podrían ser más grandes pero por practicidad)
         jefe_mujer_f   = factor(ifelse(jefe_mujer == "Jefe_mujer", 1, 0), labels = c("Si", "No")), 
         prop_ocu_pet_f = factor(ifelse(prop_ocu_pet > 0.6, 1, 0), labels = c("Si", "No")), # hogares usualmente 3,3 personas, que trabaje al menos el 60 % (cuantil 3) 
         Mayor_dependiente_f = factor(ifelse(N_mayor_dependiente >= 1, 1, 0), labels = c("Si", "No")),
-        jefe_cot_pens  = factor(ifelse(jefe_pension == "Jefe_af_pension", 1, 0), labels = c("Si", "No"))
+        jefe_cot_pens  = factor(ifelse(jefe_pension == "Jefe_af_pension", 1, 0), labels = c("Si", "No")),
+        jefe_cont_salud  = factor(ifelse(jefe_salud_sub == "Jefe_salud_contributivo", 1, 0), labels = c("Si", "No")), 
+        N_desocupados_f = factor(ifelse(N_desocupados >= 1, 1, 0), labels = c("Si", "No"))
 ) 
 
 sapply(train, class)
 
 table(train$jefe_salud_sub)
+table(test$jefe_salud_sub)
 
-X_2 = c("hacinamiento_f", 
+
+X_2 = c("hacinamiento", 
         "Clase",
         "jefe_mujer_f", 
         "N_ocupados", 
@@ -79,7 +84,11 @@ X_2 = c("hacinamiento_f",
         "prop_ocu_pet_f",
         "jefe_cot_pens", 
         "N_menores_f", 
-        "jefe_salud_sub")
+        "jefe_cont_salud", 
+        "viv_noPropia", 
+        "N_desocupados_f")
+
+table(train$N_desocupados)
 
 #------------------------------------------------------------------------------#
 # 1. Modelos ----
@@ -93,7 +102,8 @@ bagged_tree = ranger::ranger(
               formula(paste0("Pobre_d ~", paste0(X_2, collapse = " + "))),
               data = train,
               num.trees= 500, ## Numero de bootstrap samples y arboles a estimar. Default 500  
-              mtry= 8,   # N. var aleatoriamente seleccionadas en cada partición. Baggin usa todas las vars.
+              # mtry = 9,
+              mtry = sqrt(length(X_2)),
               min.node.size  = 1, ## Numero minimo de observaciones en un nodo para intentar 
             ) 
 bagged_tree
@@ -115,7 +125,6 @@ pred.bag_ranger = as.data.frame( bagged_pred$predictions )
 # Visualizemoslo
 head(tibble(pred.bag_ranger))
 
-
 # Calcular las probabilidades de Default (promedio todos los árboles)
 ntrees = ncol( pred.bag_ranger )
 phat.bag = rowSums(pred.bag_ranger == "2") / ntrees
@@ -135,6 +144,41 @@ yhat.bag = ifelse(phat.bag >= 0.5, 1, 0)
 F1_Score(y_pred = yhat.bag, y_true = Pobre_num, positive = "1")
 
 
+#------------------------------------------------------------------------------#
+# Resultados para Kaggle
+#------------------------------------------------------------------------------#
+
+preds_test <- predict(bagged_tree, data = test)$predictions
+predictSample <- test %>%
+  mutate(pobre_lab = preds_test) %>%
+  select(id, pobre_lab)
+
+
+head(predictSample)
+
+predictSample = predictSample %>% 
+  mutate(pobre = ifelse(pobre_lab == "Si", 1, 0)) %>% 
+  select(id, pobre)
+
+head(predictSample)
+table(predictSample$pobre)
+
+zip_path = file.path(raw_path, "uniandes-bdml-202510-ps-2.zip")
+sample_submission = read_csv(unz(zip_path, "sample_submission.csv"))
+head(sample_submission)
+
+table(sample_submission$pobre)
+
+
+# Replace '.' with '_' in the numeric values converted to strings
+# lambda_str <- gsub( "\\.", "_", as.character(round(logit_4$bestTune$lambda, 4)))
+# alpha_str <- gsub("\\.", "_", as.character(logit_4$bestTune$alpha))
+
+name = paste0(
+  "Bagging_2",
+  ".csv") 
+
+write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
 
 
 #-----------------------
@@ -165,7 +209,7 @@ adagrid = expand.grid(
 set.seed(91519) # important set seed. 
 
 adaboost_tree <- train(
-                       formula(paste0("Pobre ~", paste0(X_2, collapse = " + "))),
+                       formula(paste0("Pobre_d ~", paste0(X_2, collapse = " + "))),
                        data = train, 
                        method = "AdaBoost.M1",  # para implementar el algoritmo antes descrito
                        trControl = ctrl,
@@ -174,3 +218,49 @@ adaboost_tree <- train(
 )
 
 adaboost_tree
+
+table(train$Pobre_num)
+
+pred_prob <- predict(adaboost_tree,
+                     newdata = train, 
+                     type = "prob")   
+
+F1_Score(y_pred = pred_prob, y_true = Pobre_num, positive = "1")
+
+
+#------------------------------------------------------------------------------#
+# Resultados para Kaggle
+#------------------------------------------------------------------------------#
+
+predictSample = test   %>% 
+  mutate(pobre_lab = predict(adaboost_tree, newdata = test, type = "raw")    ## predicted class labels
+  )  %>% select(id, pobre_lab)
+
+head(predictSample)
+table(predictSample$pobre_lab)
+
+
+predictSample = predictSample %>% 
+  mutate(pobre = ifelse(pobre_lab == "1", 1, 0)) %>% 
+  select(id, pobre)
+
+head(predictSample)
+table(predictSample$pobre)
+
+
+zip_path = file.path(raw_path, "uniandes-bdml-202510-ps-2.zip")
+sample_submission = read_csv(unz(zip_path, "sample_submission.csv"))
+head(sample_submission)
+
+table(sample_submission$pobre)
+
+# Replace '.' with '_' in the numeric values converted to strings
+# lambda_str <- gsub( "\\.", "_", as.character(round(logit_4$bestTune$lambda, 4)))
+# alpha_str <- gsub("\\.", "_", as.character(logit_4$bestTune$alpha))
+
+name = paste0(
+  "Boosting_1",
+  ".csv") 
+
+write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
+
