@@ -28,6 +28,8 @@ test_hogares  <- read_csv(unz(zip_path, "test_hogares.csv"))
 train_personas <- read_csv(unz(zip_path, "train_personas.csv"))
 train_hogares  <- read_csv(unz(zip_path, "train_hogares.csv"))
 
+intersect(colnames(test_personas), colnames(train_personas))
+intersect(colnames(test_hogares), colnames(train_hogares))
 
    # train_personas <- train_personas %>% slice(1:100)
 
@@ -53,11 +55,21 @@ train_personas_vars <- train_personas %>%
                       ocupado = ifelse(is.na(Oc),0,1), # Variable ocupado
                       desocupado = ifelse(is.na(Des),0,1), # Variable desocupado
                       inactivo = ifelse(is.na(Ina),0,1), # Variable inactivo
-                      jefe_nivel_educ = ifelse(P6050 == 1, nivel_educ, NA) # Jefe de hogar no cotiza a pensión
+                      jefe_nivel_educ = ifelse(P6050 == 1, nivel_educ, NA),  # Jefe de hogar no cotiza a pensión
+                      
+                      # nuevas variables 
+                      antiguedad_empleo = (P6426/12),  # tiempo empresa (ocupados) en meses
+                      ocupacion_ocu = P6430,  # ocupaciones ocupados
+                      ocupacion_des = P7350,  # ocupaciones anteriores desocupados
+                      tamano_emp = P6870, # tamaño empresa (ocupados)
+                      subsidios = P7510s3 # ¿recibió c. ayudas en dinero de instituciones del país?) 1 sí 2 no 9 no sabe, noinforma
+
                       ) %>% 
                       select(id, Orden, pt, Pet, mujer, jefe_hogar, jefe_mujer, jefe_salud_sub,
                              jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
-                             nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu)
+                             nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu, 
+                             
+                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios)
 
 # Variables para la base test personas
 test_personas_vars <- test_personas %>% 
@@ -77,11 +89,21 @@ test_personas_vars <- test_personas %>%
                         ocupado = ifelse(is.na(Oc),0,1), # Variable ocupado
                         desocupado = ifelse(is.na(Des),0,1), # Variable desocupado
                         inactivo = ifelse(is.na(Ina),0,1), # Variable inactivo
-                        jefe_nivel_educ = ifelse(P6050 == 1, nivel_educ, NA) # Jefe de hogar no cotiza a pensión
+                        jefe_nivel_educ = ifelse(P6050 == 1, nivel_educ, NA), # Jefe de hogar no cotiza a pensión
+                        
+                        # nuevas variables 
+                        antiguedad_empleo = (P6426/12),  # tiempo empresa (ocupados) en meses
+                        ocupacion_ocu = P6430,  # ocupaciones ocupados
+                        ocupacion_des = P7350,  # ocupaciones anteriores desocupados
+                        tamano_emp = P6870, # tamaño empresa (ocupados)
+                        subsidios = P7510s3 # ¿recibió c. ayudas en dinero de instituciones del país?) 1 sí 2 no 9 no sabe, noinforma
+                        
                       ) %>% 
                       select(id, Orden, pt, Pet, mujer, jefe_hogar, jefe_mujer, jefe_salud_sub,
                              jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
-                             nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu)
+                             nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu, 
+                             
+                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios)
 
 
 # 4. CREAR VARIABLES A NIVEL DE HOGAR ------------------------------------------
@@ -129,13 +151,23 @@ test_personas_hogar_B <- test_personas_vars  %>%
 train_personas_hogar <- train_personas_vars  %>% 
                         filter(jefe_hogar==1) %>%
                         select(id, jefe_mujer, jefe_salud_sub, jefe_pension, 
-                               jefe_edad, jefe_edad2, jefe_nivel_educ) %>%
+                               jefe_edad, jefe_edad2, jefe_nivel_educ, 
+                               
+                               jefe_ocu, 
+                               
+                               antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios
+                               ) %>%
                         left_join(train_personas_hogar_B, by = "id")
 
 test_personas_hogar <- test_personas_vars  %>% 
                         filter(jefe_hogar==1) %>%
                         select(id, jefe_mujer, jefe_salud_sub, jefe_pension, 
-                               jefe_edad, jefe_edad2, jefe_nivel_educ) %>%
+                               jefe_edad, jefe_edad2, jefe_nivel_educ, 
+                               
+                               jefe_ocu, 
+                               
+                               antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios
+                        ) %>%
                         left_join(test_personas_hogar_B, by = "id")
 
 
@@ -144,12 +176,12 @@ test_personas_hogar <- test_personas_vars  %>%
 train_hogares_vars <- train_hogares %>% 
                       mutate(hacinamiento = Nper/P5000, # Personas por cuarto en el hogar
                              viv_noPropia = ifelse(P5090 == 1 | P5090 == 2, 0L, 1L)) %>%
-                      select(id, Clase, Dominio, hacinamiento, Nper, Pobre) # Seleccionar variables de interes
+                      select(id, Clase, Dominio, hacinamiento, Nper, Pobre, viv_noPropia) # Seleccionar variables de interes
 
 test_hogares_vars <- test_hogares %>% 
                       mutate(hacinamiento = Nper/P5000, # Personas por cuarto en el hogar
                              viv_noPropia = ifelse(P5090 == 1 | P5090 == 2, 0L, 1L)) %>%
-                      select(id, Clase, Dominio, hacinamiento, Nper) # Seleccionar variables de interes
+                      select(id, Clase, Dominio, hacinamiento, Nper, viv_noPropia) # Seleccionar variables de interes
 
 
 # 5. CREAR VARIABLES A NIVEL DE HOGAR ------------------------------------------
@@ -180,7 +212,20 @@ train <- pre_train %>%
                Dominio = factor(Dominio),
                jefe_nivel_educ = factor(jefe_nivel_educ, levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
                max_nivel_educ = factor(max_nivel_educ,levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
-               Clase = factor(Clase,levels=c(1:2), labels=c('Cabecera','Resto'))
+               Clase = factor(Clase,levels=c(1:2), labels=c('Cabecera','Resto')), 
+               ocupacion_ocu_f = factor(case_when(
+                                 ocupacion_ocu %in% c(1, 2) ~ "Asal_formal",
+                                 ocupacion_ocu %in% c(4, 5) ~ "Cuenta_propia_empleador",
+                                 ocupacion_ocu %in% c(3, 8, 9) ~ "Informal_precario",
+                                 ocupacion_ocu %in% c(6, 7) ~ "Sin_remuneracion",
+                                 TRUE ~ NA_character_)), 
+               
+               ocupacion_des_f = factor(case_when(
+                                 ocupacion_des %in% c(1, 2) ~ "Asal_formal",
+                                 ocupacion_des %in% c(4, 5) ~ "Cuenta_propia_empleador",
+                                 ocupacion_des %in% c(3, 8, 9) ~ "Informal_precario",
+                                 ocupacion_des %in% c(6, 7) ~ "Sin_remuneracion",
+                                 TRUE ~ NA_character_))
               )
 
 test <- pre_test %>%
@@ -190,8 +235,21 @@ test <- pre_test %>%
                Dominio = factor(Dominio),
                jefe_nivel_educ = factor(jefe_nivel_educ, levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
                max_nivel_educ = factor(max_nivel_educ,levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
-               Clase = factor(Clase,levels=c(1:2), labels=c('Cabecera','Resto'))
-              )
+               Clase = factor(Clase,levels=c(1:2), labels=c('Cabecera','Resto')), 
+                            
+               ocupacion_ocu_f = factor(case_when(
+                                 ocupacion_ocu %in% c(1, 2) ~ "Asal_formal",
+                                 ocupacion_ocu %in% c(4, 5) ~ "Cuenta_propia_empleador",
+                                 ocupacion_ocu %in% c(3, 8, 9) ~ "Informal_precario",
+                                 ocupacion_ocu %in% c(6, 7) ~ "Sin_remuneracion",
+                                 TRUE ~ NA_character_)), 
+               
+               ocupacion_des_f = factor(case_when(
+                                 ocupacion_des %in% c(1, 2) ~ "Asal_formal",
+                                 ocupacion_des %in% c(4, 5) ~ "Cuenta_propia_empleador",
+                                 ocupacion_des %in% c(3, 8, 9) ~ "Informal_precario",
+                                 ocupacion_des %in% c(6, 7) ~ "Sin_remuneracion",
+                                 TRUE ~ NA_character_)))
 
 
 # Normalizar variables numericas
@@ -220,6 +278,3 @@ saveRDS(upSampledTrain, file.path(stores_path, "upsampled_train_data.rds"))
 
 # Mensaje de proceso realizado
 message(green("✅ Bases guardadas en "), green(stores_path))
-
-
- 
