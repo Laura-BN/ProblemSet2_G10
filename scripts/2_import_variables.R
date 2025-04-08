@@ -207,7 +207,8 @@ train <- pre_train %>%
         mutate(Pobre = factor(Pobre, levels=c(1,0), labels=c("Pobre","No_pobre")),
                jefe_mujer = factor(jefe_mujer, levels = c(1, 0), labels = c("Jefe_mujer", "Jefe_hombre")),
                jefe_salud_sub = factor(jefe_salud_sub, levels = c(1, 0), labels = c("Jefe_salud_subsidiado", "Jefe_salud_contributivo")),
-               jefe_pension = factor(jefe_pension, levels = c(1, 0), labels = c("Jefe_af_pension", "Jefe_no_af_pension")),
+               jefe_pension = factor(jefe_pension, levels = c(1, 0), labels = c("Jefe_af_pension", "Jefe_no_af_pension"),),
+               viv_noPropia = factor(viv_noPropia, levels = c(1, 0), labels = c("sin_vivienda", "con_vivienda"),),
                
                Dominio = factor(Dominio),
                jefe_nivel_educ = factor(jefe_nivel_educ, levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
@@ -235,6 +236,7 @@ test <- pre_test %>%
                Dominio = factor(Dominio),
                jefe_nivel_educ = factor(jefe_nivel_educ, levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
                max_nivel_educ = factor(max_nivel_educ,levels=c(0:6), labels=c('Ns','Ninguno', 'Preescolar','Primaria', 'Secundaria','Media', 'Universitaria')),
+               viv_noPropia = factor(viv_noPropia, levels = c(1, 0), labels = c("sin_vivienda", "con_vivienda"),),
                Clase = factor(Clase,levels=c(1:2), labels=c('Cabecera','Resto')), 
                             
                ocupacion_ocu_f = factor(case_when(
@@ -278,3 +280,5 @@ saveRDS(upSampledTrain, file.path(stores_path, "upsampled_train_data.rds"))
 
 # Mensaje de proceso realizado
 message(green("✅ Bases guardadas en "), green(stores_path))
+
+
