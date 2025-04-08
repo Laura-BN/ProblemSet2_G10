@@ -6,7 +6,6 @@
 
 # 1. IMPORTAR DATOS ------------------------------------------------------------
 
-up_train_raw <- readRDS(file.path(stores_path, "upsampled_train_data.rds"))
 train_raw <- readRDS(file.path(stores_path, "train_data.rds"))
 test_raw  <- readRDS(file.path(stores_path, "test_data.rds"))
 
@@ -62,8 +61,8 @@ rf<- ranger::ranger(
         N_personas + hacinamiento + N_ocupados + N_inactivos +
         N_menores + N_mayor_dependiente + max_nivel_educ + Clase, 
       data = train_raw,
-      num.trees= 1000, ## Numero de bootstrap samples y arboles a estimar. Default 500  
-      mtry= 8,   # N. var aleatoriamente seleccionadas en cada partición
+      num.trees= 500, ## Numero de bootstrap samples y arboles a estimar. Default 500  
+      mtry= 4,   # N. var aleatoriamente seleccionadas en cada partición
       min.node.size  = 1, ## Numero minimo de observaciones en un nodo
       importance="impurity") 
 rf
