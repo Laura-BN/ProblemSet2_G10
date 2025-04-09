@@ -58,15 +58,14 @@ table(validation$Pobre)
 
 # Grilla de hiperparámetros con ajustes adicionales
 grid_xgboost <- expand.grid(
-                nrounds = c(100, 250, 500, 1000),              # Número de rondas (iteraciones)
+                nrounds = c(100, 250, 500),              # Número de rondas (iteraciones)
                 max_depth = c(2, 3, 5),                  # Profundidad máxima del árbol
                 eta = c(0.01, 0.05, 0.1),                 # Tasa de aprendizaje
                 gamma = c(0, 0.1, 0.3),                  # Penalización por complejidad
                 min_child_weight = c(1, 10, 25),          # Peso mínimo de un nodo hijo
                 colsample_bytree = c(0.5, 0.7, 1),       # Fracción de características por árbol
                 subsample = c(0.6, 0.8, 1)               # Fracción de muestras para cada árbol
-              ) %>% 
-              dplyr::filter(!(nrounds == 1000 & eta == 0.1))  # elimina combinaciones pesadas e innecesarias
+              )  # elimina combinaciones pesadas e innecesarias
 
 grid_xgboost
 
