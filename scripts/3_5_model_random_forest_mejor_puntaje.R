@@ -6,7 +6,7 @@
 
 # 1. IMPORTAR DATOS ------------------------------------------------------------
 
-up_train_raw <- readRDS(file.path(stores_path, "upsampled_train_data.rds"))
+#up_train_raw <- readRDS(file.path(stores_path, "upsampled_train_data.rds"))
 train_raw <- readRDS(file.path(stores_path, "train_data.rds"))
 test_raw  <- readRDS(file.path(stores_path, "test_data.rds"))
 
@@ -14,7 +14,7 @@ test_raw  <- readRDS(file.path(stores_path, "test_data.rds"))
 # 2. PREPROCESAMIENTO ----------------------------------------------------------
 
 # Eliminar algunas variables que no entran en el modelo
-train_raw <- up_train_raw %>% select(-ends_with("_z"))
+train_raw <- train_raw %>% select(-ends_with("_z"))
 test_raw <- test_raw %>% select(-ends_with("_z"))
 
 # Crear algunas interacciones
