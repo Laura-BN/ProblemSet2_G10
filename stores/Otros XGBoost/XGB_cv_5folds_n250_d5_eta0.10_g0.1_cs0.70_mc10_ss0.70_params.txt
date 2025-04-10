@@ -1,0 +1,4 @@
+Mejores parámetros del modelo XGBoost
+
+   nrounds max_depth eta gamma colsample_bytree min_child_weight subsample
+95     250         5 0.1   0.1              0.7               10       0.7

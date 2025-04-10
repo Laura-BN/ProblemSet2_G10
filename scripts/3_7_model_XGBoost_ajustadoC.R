@@ -65,11 +65,11 @@ scale_pos_weight
 # Grilla de hiperparámetros con ajustes adicionales
 grid_xgboost <- expand.grid(
                 nrounds = c(250, 500),              # Número de rondas (iteraciones)
-                max_depth = c(1, 3, 5),             # Profundidad máxima del árbol
-                eta = c(0.01, 0.1),                 # Tasa de aprendizaje
-                gamma = c(0, 0.1),                  # Penalización por complejidad
-                min_child_weight = c(1, 10),        # Peso mínimo de un nodo hijo
-                colsample_bytree = c(0.4, 0.7),     # Fracción de características por árbol
+                max_depth = c(3, 5, 7),             # Profundidad máxima del árbol
+                eta = c(0.01, 0.05, 0.1),           # Tasa de aprendizaje
+                gamma = c(0, 0.1, 1),               # Penalización por complejidad
+                min_child_weight = c(1, 3, 5),      # Peso mínimo de un nodo hijo
+                colsample_bytree = c(0.6, 0.8),     # Fracción de características por árbol
                 subsample = c(0.7)                  # Fracción de muestras para cada árbol
               )  
 
@@ -94,7 +94,7 @@ fitControl <- trainControl(
               classProbs = TRUE,
               savePredictions = "all", 
               verboseIter = TRUE,
-              sampling = "up"   # Sobremuestreo de la clase minoritaria (Pobre)
+              sampling = "smote"   # Sobremuestreo de la clase minoritaria (Pobre)
             )
 
 # Entrenamiento de XGBoost
@@ -110,8 +110,8 @@ Xgboost_tree <- train(
                 trControl = fitControl, 
                 tuneGrid = grid_xgboost, 
                 metric = "F1", 
-                verbosity = 0,
-                scale_pos_weight = scale_pos_weight # Balanceo de clases
+                verbosity = 0
+                #scale_pos_weight = scale_pos_weight # Balanceo de clases
               )
 
 Xgboost_tree
@@ -126,7 +126,7 @@ phat_xgb_val <- predict(Xgboost_tree,
                         type = "prob")[, "Pobre"]
 
 # Clasificación con umbral 0.5
-pred_class_val <- ifelse(phat_xgb_val >= 0.7, 1, 0)
+pred_class_val <- ifelse(phat_xgb_val >= 0.5, 1, 0)
 
 # Vector real binario
 actual_val <- ifelse(validation$Pobre == "Pobre", 1, 0)
@@ -220,7 +220,7 @@ plot_importance <- ggplot(imp_df, aes(x = reorder(Variable, Importance), y = Imp
 
 # Guardar el gráfico
 ggsave(
-  filename = file.path(stores_path, "importancia_variables_xgboostB.png"),
+  filename = file.path(stores_path, "importancia_variables_xgboostC.png"),
   plot = plot_importance,
   width = 8,
   height = 6,
@@ -252,7 +252,7 @@ plot(thresholds, f1_scores, type = "l", col = "blue", lwd = 2,
 abline(v = best_thresh, col = "red", lty = 2)
 
 # Guardar el gráfico base en un archivo PNG
-png(filename = file.path(stores_path, "umbral_f1_xgboostB.png"),
+png(filename = file.path(stores_path, "umbral_f1_xgboostC.png"),
     width = 800, height = 600)
 
 # Crear gráfico base
