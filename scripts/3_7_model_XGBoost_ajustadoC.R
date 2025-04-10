@@ -126,7 +126,7 @@ phat_xgb_val <- predict(Xgboost_tree,
                         type = "prob")[, "Pobre"]
 
 # Clasificación con umbral 0.5
-pred_class_val <- ifelse(phat_xgb_val >= 0.5, 1, 0)
+pred_class_val <- ifelse(phat_xgb_val >= 0.45, 1, 0)
 
 # Vector real binario
 actual_val <- ifelse(validation$Pobre == "Pobre", 1, 0)
@@ -156,7 +156,7 @@ print(cm_xgb)
 phat_xgb_test <- predict(Xgboost_tree, newdata = test_raw, type = "prob")[, "Pobre"]
 
 # 2. Clasificar con umbral 0.5
-test_raw$pobre <- ifelse(phat_xgb_test >= 0.5, "Pobre", "No_pobre")
+test_raw$pobre <- ifelse(phat_xgb_test >= 0.45, "Pobre", "No_pobre")
 
 # 3. Crear base de predicción para Kaggle
 predictSample <- test_raw %>%
@@ -198,6 +198,9 @@ cat("Bitacora de parámetros guardada en:", param_log_name, "\n")
 
 # 7. IMPORTANCIA DE LAS VARIABLES (XGBoost) --------------------------------
 
+# Obtener importancia de variables
+var_imp <- varImp(Xgboost_tree)
+
 # Convertir a data frame para ggplot
 imp_df <- data.frame(
   Variable = rownames(var_imp$importance),
@@ -218,6 +221,8 @@ plot_importance <- ggplot(imp_df, aes(x = reorder(Variable, Importance), y = Imp
   ) +
   theme_minimal()
 
+plot_importance
+
 # Guardar el gráfico
 ggsave(
   filename = file.path(stores_path, "importancia_variables_xgboostC.png"),
@@ -231,7 +236,7 @@ ggsave(
 
 # 8. SELECCIONAR UMBRAL ÓPTIMO (XGBoost) --------------------------------
 
-# Vector de probabilidades (ya deberías tenerlo)
+# Vector de probabilidades
 phat_xgb_val <- predict(Xgboost_tree, newdata = validation, type = "prob")[, "Pobre"]
 actual_val <- ifelse(validation$Pobre == "Pobre", 1, 0)
 
