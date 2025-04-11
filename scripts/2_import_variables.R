@@ -81,9 +81,10 @@ train_personas_vars$ind_ingresos_aprox <- rowSums(train_personas_vars[ , vars_in
 
 train_personas_vars <- train_personas_vars %>% 
                       select(id, Orden, pt, Pet, mujer, jefe_hogar, jefe_mujer, jefe_salud_sub,
-                             jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
+                             jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente, 
                              nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu,
-                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, ind_ingresos_aprox)
+                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, 
+                             ind_ingresos_aprox, Dominio)
 
 
 # Variables para la base test personas
@@ -127,7 +128,8 @@ test_personas_vars <- test_personas_vars %>%
                       select(id, Orden, pt, Pet, mujer, jefe_hogar, jefe_mujer, jefe_salud_sub,
                              jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
                              nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu,
-                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, ind_ingresos_aprox)
+                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, 
+                             ind_ingresos_aprox, Dominio)
 
 
 
