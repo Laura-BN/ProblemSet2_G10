@@ -133,7 +133,7 @@ head(tibble(pred.bag_ranger))
 
 # Calcular las probabilidades de Default (promedio todos los árboles)
 ntrees = ncol( pred.bag_ranger )
-phat.bag = rowSums(pred.bag_ranger == "2") / ntrees
+phat.bag = rowSums(pred.bag_ranger == "Si") / ntrees
 
 
 length(Pobre_num)
@@ -165,6 +165,8 @@ head(predictSample)
 predictSample = predictSample %>% 
   mutate(pobre = ifelse(pobre_lab == "Si", 1, 0)) %>% 
   select(id, pobre)
+
+predictSample = predictSample %>% arrange(id)
 
 head(predictSample)
 table(predictSample$pobre)
