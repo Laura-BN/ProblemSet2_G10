@@ -195,7 +195,12 @@ train_personas_hogar_B <- train_personas_vars  %>%
                                   N_mujer = sum(mujer, na.ram=TRUE), # Mujeres en el hogar
                                   max_nivel_educ = max(nivel_educ, na.rm=TRUE), # Maximo nivel educativo en el hogar
                                   total_ind_ingresos = sum(ind_ingresos_aprox, na.rm = TRUE), # total fuentes de ingreso por hogar
-                                  promedio_anios_educ = mean(anios_educ[P6040 >= 15], na.rm = TRUE) # promedio años educación hogar
+                                  # Promedio de educación para personas de 15 años o más
+                                  promedio_anios_educ = ifelse(
+                                                        sum(P6040 >= 15 & !is.na(anios_educ)) > 0,
+                                                        mean(anios_educ[P6040 >= 15], na.rm = TRUE),
+                                                        0
+                                                        )
                                   ) %>%
                         mutate(prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
                                prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
@@ -218,7 +223,12 @@ test_personas_hogar_B <- test_personas_vars  %>%
                                   N_mujer = sum(mujer, na.ram=TRUE), # Mujeres en el hogar
                                   max_nivel_educ = max(nivel_educ, na.rm=TRUE), # Maximo nivel educativo en el hogar
                                   total_ind_ingresos = sum(ind_ingresos_aprox, na.rm = TRUE), # total fuentes de ingreso por hogar
-                                  promedio_anios_educ = mean(anios_educ[P6040 >= 15], na.rm = TRUE) # promedio años educación hogar
+                                  # Promedio de educación para personas de 15 años o más
+                                  promedio_anios_educ = ifelse(
+                                    sum(P6040 >= 15 & !is.na(anios_educ)) > 0,
+                                    mean(anios_educ[P6040 >= 15], na.rm = TRUE),
+                                    0
+                                  )
                                   ) %>%
                         mutate(prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
                                prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
