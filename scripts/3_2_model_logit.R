@@ -6,6 +6,14 @@ train = readRDS(file.path(stores_path, "upsampled_train_data.rds"))
 # train = readRDS(file.path(stores_path, "train_data.rds"))
 test  = readRDS(file.path(stores_path, "test_data.rds"))
 
+train = train[, !duplicated(colnames(train))]
+train = train %>% dplyr::mutate(Pobre_d = ifelse(Pobre == "Pobre", 1, 0))
+
+colnames(train)
+Pobre_num = train$Pobre_d # para calcular los indicadores de rendimiento
+train = train %>% dplyr::mutate(Pobre_d = ifelse(Pobre == "Pobre", 1, 0))
+table(train$Pobre_d)
+
 #------------------------------------------------------------------------------#
 # 1. Modelos ----
 #------------------------------------------------------------------------------#
