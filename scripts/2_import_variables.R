@@ -81,10 +81,9 @@ train_personas_vars$ind_ingresos_aprox <- rowSums(train_personas_vars[ , vars_in
 
 train_personas_vars <- train_personas_vars %>% 
                       select(id, Orden, pt, Pet, mujer, jefe_hogar, jefe_mujer, jefe_salud_sub,
-                             jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente, 
+                             jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
                              nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu,
-                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, 
-                             ind_ingresos_aprox, Dominio)
+                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, ind_ingresos_aprox)
 
 
 # Variables para la base test personas
@@ -128,8 +127,7 @@ test_personas_vars <- test_personas_vars %>%
                       select(id, Orden, pt, Pet, mujer, jefe_hogar, jefe_mujer, jefe_salud_sub,
                              jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
                              nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu,
-                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, 
-                             ind_ingresos_aprox, Dominio)
+                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, ind_ingresos_aprox)
 
 
 
@@ -174,7 +172,7 @@ test_personas_hogar_B <- test_personas_vars  %>%
                                   ) %>%
                         mutate(prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
                                prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
-                               prop_fuente_ing = total_ind_ingresos/N_personas, # Proporcion fuentes de ingreso por persona
+                               prop_fuentes_ing = total_ind_ingresos/N_personas, # Proporcion fuentes de ingreso por persona
                                prop_menores_pob = N_menores/N_personas, # Proporcion menores hogar
                                prop_mayores_pob = N_mayor_dependiente/N_personas # Proporcion personas mayores hogar
                                ) %>% 
