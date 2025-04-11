@@ -150,7 +150,9 @@ train_personas_hogar_B <- train_personas_vars  %>%
                                   ) %>%
                         mutate(prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
                                prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
-                               prop_fuentes_ing = total_ind_ingresos/N_personas
+                               prop_fuentes_ing = total_ind_ingresos/N_personas, # Proporcion fuentes de ingreso por persona
+                               prop_menores_pob = N_menores/N_personas, # Proporcion menores hogar
+                               prop_mayores_pob = N_mayor_dependiente/N_personas # Proporcion personas mayores hogar
                                ) %>% 
                         ungroup()
 
@@ -170,7 +172,9 @@ test_personas_hogar_B <- test_personas_vars  %>%
                                   ) %>%
                         mutate(prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
                                prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
-                               prop_fuente_ing = total_ind_ingresos/N_personas
+                               prop_fuente_ing = total_ind_ingresos/N_personas, # Proporcion fuentes de ingreso por persona
+                               prop_menores_pob = N_menores/N_personas, # Proporcion menores hogar
+                               prop_mayores_pob = N_mayor_dependiente/N_personas # Proporcion personas mayores hogar
                                ) %>% 
                         ungroup()
 
