@@ -36,6 +36,12 @@ intersect(colnames(test_hogares), colnames(train_hogares))
 
 # 3. CREAR NUEVAS VARIABLES EN LA BASE PERSONAS --------------------------------
 
+# Crear lista de variables relacionadas con ingresos
+vars_ingresos <- c("P6510", "P6545", "P6580", "P6585s1", "P6585s2", "P6585s3", "P6585s4",
+                   "P6590", "P6600", "P6620", "P6630s1", "P6630s2", "P6630s3", "P6630s4", "P6630s6",
+                   "P7472", "P7495", "P7500s2", "P7500s3", "P7505")
+
+
 # Variables para la base train personas
 
 train_personas_vars <- train_personas %>% 
@@ -63,13 +69,22 @@ train_personas_vars <- train_personas %>%
                       ocupacion_des = P7350,  # ocupaciones anteriores desocupados
                       tamano_emp = P6870, # tamaño empresa (ocupados)
                       subsidios = P7510s3 # ¿recibió c. ayudas en dinero de instituciones del país?) 1 sí 2 no 9 no sabe, noinforma
+                      ) 
 
-                      ) %>% 
+
+# Incluir el indicador de ingreso aproximado en train_personas_vars
+
+train_personas_vars <- train_personas_vars %>%
+                      mutate(across(all_of(vars_ingresos), ~ ifelse(. == 1, 1, 0)))
+
+train_personas_vars$ind_ingresos_aprox <- rowSums(train_personas_vars[ , vars_ingresos], na.rm = TRUE)
+
+train_personas_vars <- train_personas_vars %>% 
                       select(id, Orden, pt, Pet, mujer, jefe_hogar, jefe_mujer, jefe_salud_sub,
                              jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
-                             nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu, 
-                             
-                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios)
+                             nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu,
+                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, ind_ingresos_aprox)
+
 
 # Variables para la base test personas
 test_personas_vars <- test_personas %>% 
@@ -98,12 +113,22 @@ test_personas_vars <- test_personas %>%
                         tamano_emp = P6870, # tamaño empresa (ocupados)
                         subsidios = P7510s3 # ¿recibió c. ayudas en dinero de instituciones del país?) 1 sí 2 no 9 no sabe, noinforma
                         
-                      ) %>% 
+                      ) 
+
+
+# Incluir el indicador de ingreso aproximado en test_personas_vars
+
+test_personas_vars <- test_personas_vars %>%
+  mutate(across(all_of(vars_ingresos), ~ ifelse(. == 1, 1, 0)))
+
+test_personas_vars$ind_ingresos_aprox <- rowSums(test_personas_vars[ , vars_ingresos], na.rm = TRUE)
+
+test_personas_vars <- test_personas_vars %>% 
                       select(id, Orden, pt, Pet, mujer, jefe_hogar, jefe_mujer, jefe_salud_sub,
                              jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
-                             nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu, 
-                             
-                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios)
+                             nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu,
+                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, ind_ingresos_aprox)
+
 
 
 # 4. CREAR VARIABLES A NIVEL DE HOGAR ------------------------------------------
@@ -120,10 +145,12 @@ train_personas_hogar_B <- train_personas_vars  %>%
                                   N_menores = sum(menor, na.rm = TRUE), # Personas menores en el hogar
                                   N_mayor_dependiente = sum(mayor_dependiente, na.rm = TRUE), # Adultos mayores dependientes en el hogar
                                   N_mujer = sum(mujer, na.ram=TRUE), # Mujeres en el hogar
-                                  max_nivel_educ = max(nivel_educ, na.rm=TRUE) # Maximo nivel educativo en el hogar
+                                  max_nivel_educ = max(nivel_educ, na.rm=TRUE), # Maximo nivel educativo en el hogar
+                                  total_ind_ingresos = sum(ind_ingresos_aprox, na.rm = TRUE) # total fuentes de ingreso por hogar
                                   ) %>%
                         mutate(prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
-                               prop_ocu_pet = N_ocupados/N_personas # Proporcion ocupados / pt
+                               prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
+                               prop_fuentes_ing = total_ind_ingresos/N_personas
                                ) %>% 
                         ungroup()
 
@@ -138,11 +165,13 @@ test_personas_hogar_B <- test_personas_vars  %>%
                                   N_menores = sum(menor, na.rm = TRUE), # Personas menores en el hogar
                                   N_mayor_dependiente = sum(mayor_dependiente, na.rm = TRUE), # Adultos mayores dependientes en el hogar
                                   N_mujer = sum(mujer, na.ram=TRUE), # Mujeres en el hogar
-                                  max_nivel_educ = max(nivel_educ, na.rm=TRUE) # Maximo nivel educativo en el hogar
+                                  max_nivel_educ = max(nivel_educ, na.rm=TRUE), # Maximo nivel educativo en el hogar
+                                  total_ind_ingresos = sum(ind_ingresos_aprox, na.rm = TRUE)
                                   ) %>%
                         mutate(prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
-                               prop_ocu_pet = N_ocupados/N_personas # Proporcion ocupados / pt
-                              ) %>% 
+                               prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
+                               prop_fuente_ing = total_ind_ingresos/N_personas
+                               ) %>% 
                         ungroup()
 
 
