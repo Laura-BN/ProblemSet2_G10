@@ -127,7 +127,7 @@ phat_xgb_val <- predict(Xgboost_tree,
                         type = "prob")[, "Pobre"]
 
 # Clasificación con umbral 0.5
-pred_class_val <- ifelse(phat_xgb_val >= 0.45, 1, 0)
+pred_class_val <- ifelse(phat_xgb_val >= 0.35, 1, 0)
 
 # Vector real binario
 actual_val <- ifelse(validation$Pobre == "Pobre", 1, 0)
@@ -157,7 +157,7 @@ print(cm_xgb)
 phat_xgb_test <- predict(Xgboost_tree, newdata = test_raw, type = "prob")[, "Pobre"]
 
 # 2. Clasificar con umbral 0.5
-test_raw$pobre <- ifelse(phat_xgb_test >= 0.45, "Pobre", "No_pobre")
+test_raw$pobre <- ifelse(phat_xgb_test >= 0.4, "Pobre", "No_pobre")
 
 # 3. Crear base de predicción para Kaggle
 predictSample <- test_raw %>%
