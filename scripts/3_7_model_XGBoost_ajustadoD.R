@@ -147,7 +147,7 @@ cm_xgb <- caret::confusionMatrix(as.factor(pred_class_val), as.factor(actual_val
 
 # Imprimir métricas
 cat("AUC en validación (XGBoost):", round(aucval_xgb, 5), "\n")
-cat("F1 Score en validación (umbral 0.7):", round(f1_val_xgb, 4), "\n")
+cat("F1 Score en validación (umbral 0.4):", round(f1_val_xgb, 4), "\n")
 print(cm_xgb)
 
 
@@ -156,7 +156,7 @@ print(cm_xgb)
 # 1. Estimar probabilidad de ser "Pobre"
 phat_xgb_test <- predict(Xgboost_tree, newdata = test_raw, type = "prob")[, "Pobre"]
 
-# 2. Clasificar con umbral 0.5
+# 2. Clasificar con umbral 0.4
 test_raw$pobre <- ifelse(phat_xgb_test >= 0.4, "Pobre", "No_pobre")
 
 # 3. Crear base de predicción para Kaggle
