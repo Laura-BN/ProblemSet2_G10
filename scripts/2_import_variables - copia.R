@@ -13,7 +13,6 @@ if (!require(crayon)) install.packages("crayon", dependencies = TRUE)
 library(crayon)
 
 
-
 # 2. IMPORTAR DATOS ------------------------------------------------------------
 
 # Ruta con las bases de datos en ZIP
@@ -70,30 +69,7 @@ train_personas_vars <- train_personas %>%
                       ocupacion_des = P7350,  # ocupaciones anteriores desocupados
                       tamano_emp = P6870, # tamaño empresa (ocupados)
                       subsidios = P7510s3 # ¿recibió c. ayudas en dinero de instituciones del país?) 1 sí 2 no 9 no sabe, noinforma
-                      ) %>%
-                mutate(anios_educ = case_when(
-                    is.na(P6210) ~ 0,  # Si no hay info de nivel educativo
-                    is.na(P6210s1) & P6210 == 1 ~ 0,
-                    is.na(P6210s1) & P6210 == 2 ~ 0,
-                    is.na(P6210s1) & P6210 == 3 ~ 0,
-                    is.na(P6210s1) & P6210 == 4 ~ 5,
-                    is.na(P6210s1) & P6210 == 5 ~ 9,
-                    is.na(P6210s1) & P6210 == 6 ~ 11,
-                  
-                    P6210 == 9 ~ 0,
-                    P6210 == 1 ~ 0,  # Ninguno
-                    P6210 == 2 ~ ifelse(P6210s1 == 1, 1, 0),  # Preescolar: 1 si aprobó, 0 si no
-                    P6210 == 3 ~ P6210s1,  # Primaria: años 1 a 5
-                    P6210 == 4 ~ P6210s1,  # Secundaria: años 6 a 9
-                    P6210 == 5 ~ case_when(
-                      P6210s1 == 10 ~ 10,
-                      P6210s1 == 11 ~ 11,
-                      P6210s1 %in% c(12, 13) ~ 11,  # Normalistas
-                      TRUE ~ 0  # Si no cumple ninguna de las anteriores
-                    ),
-                    P6210 == 6 ~ 11 + P6210s1,  # Educación superior
-                    TRUE ~ 0  # Cualquier otro caso no contemplado
-                  ))
+                      ) 
 
 
 # Incluir el indicador de ingreso aproximado en train_personas_vars
@@ -107,8 +83,7 @@ train_personas_vars <- train_personas_vars %>%
                       select(id, Orden, pt, Pet, mujer, jefe_hogar, jefe_mujer, jefe_salud_sub,
                              jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
                              nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu,
-                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, 
-                             ind_ingresos_aprox, anios_educ, P6040)
+                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, ind_ingresos_aprox)
 
 
 # Variables para la base test personas
@@ -137,30 +112,8 @@ test_personas_vars <- test_personas %>%
                         ocupacion_des = P7350,  # ocupaciones anteriores desocupados
                         tamano_emp = P6870, # tamaño empresa (ocupados)
                         subsidios = P7510s3 # ¿recibió c. ayudas en dinero de instituciones del país?) 1 sí 2 no 9 no sabe, noinforma
-                        ) %>%
-                    mutate(anios_educ = case_when(
-                            is.na(P6210) ~ 0,  # Si no hay info de nivel educativo
-                            is.na(P6210s1) & P6210 == 1 ~ 0,
-                            is.na(P6210s1) & P6210 == 2 ~ 0,
-                            is.na(P6210s1) & P6210 == 3 ~ 0,
-                            is.na(P6210s1) & P6210 == 4 ~ 5,
-                            is.na(P6210s1) & P6210 == 5 ~ 9,
-                            is.na(P6210s1) & P6210 == 6 ~ 11,
-                            
-                            P6210 == 9 ~ 0,
-                            P6210 == 1 ~ 0,  # Ninguno
-                            P6210 == 2 ~ ifelse(P6210s1 == 1, 1, 0),  # Preescolar: 1 si aprobó, 0 si no
-                            P6210 == 3 ~ P6210s1,  # Primaria: años 1 a 5
-                            P6210 == 4 ~ P6210s1,  # Secundaria: años 6 a 9
-                            P6210 == 5 ~ case_when(
-                              P6210s1 == 10 ~ 10,
-                              P6210s1 == 11 ~ 11,
-                              P6210s1 %in% c(12, 13) ~ 11,  # Normalistas
-                              TRUE ~ 0  # Si no cumple ninguna de las anteriores
-                            ),
-                            P6210 == 6 ~ 11 + P6210s1,  # Educación superior
-                            TRUE ~ 0  # Cualquier otro caso no contemplado
-                          ))
+                        
+                      ) 
 
 
 # Incluir el indicador de ingreso aproximado en test_personas_vars
@@ -174,8 +127,7 @@ test_personas_vars <- test_personas_vars %>%
                       select(id, Orden, pt, Pet, mujer, jefe_hogar, jefe_mujer, jefe_salud_sub,
                              jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
                              nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu,
-                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, 
-                             ind_ingresos_aprox, anios_educ, P6040)
+                             antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, ind_ingresos_aprox)
 
 
 
@@ -194,8 +146,7 @@ train_personas_hogar_B <- train_personas_vars  %>%
                                   N_mayor_dependiente = sum(mayor_dependiente, na.rm = TRUE), # Adultos mayores dependientes en el hogar
                                   N_mujer = sum(mujer, na.ram=TRUE), # Mujeres en el hogar
                                   max_nivel_educ = max(nivel_educ, na.rm=TRUE), # Maximo nivel educativo en el hogar
-                                  total_ind_ingresos = sum(ind_ingresos_aprox, na.rm = TRUE), # total fuentes de ingreso por hogar
-                                  promedio_anios_educ = mean(anios_educ[P6040 >= 15], na.rm = TRUE) # promedio años educación hogar
+                                  total_ind_ingresos = sum(ind_ingresos_aprox, na.rm = TRUE) # total fuentes de ingreso por hogar
                                   ) %>%
                         mutate(prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
                                prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
@@ -217,8 +168,7 @@ test_personas_hogar_B <- test_personas_vars  %>%
                                   N_mayor_dependiente = sum(mayor_dependiente, na.rm = TRUE), # Adultos mayores dependientes en el hogar
                                   N_mujer = sum(mujer, na.ram=TRUE), # Mujeres en el hogar
                                   max_nivel_educ = max(nivel_educ, na.rm=TRUE), # Maximo nivel educativo en el hogar
-                                  total_ind_ingresos = sum(ind_ingresos_aprox, na.rm = TRUE), # total fuentes de ingreso por hogar
-                                  promedio_anios_educ = mean(anios_educ[P6040 >= 15], na.rm = TRUE) # promedio años educación hogar
+                                  total_ind_ingresos = sum(ind_ingresos_aprox, na.rm = TRUE)
                                   ) %>%
                         mutate(prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
                                prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
@@ -302,14 +252,7 @@ train <- pre_train %>%
                                  ocupacion_ocu %in% c(4, 5) ~ "Cuenta_propia_empleador",
                                  ocupacion_ocu %in% c(3, 8, 9) ~ "Informal_precario",
                                  ocupacion_ocu %in% c(6, 7) ~ "Sin_remuneracion",
-                                 TRUE ~ NA_character_)),
-               
-                tipo_trabajo = factor(case_when(
-                   ocupacion_ocu %in% c(1, 2, 3, 8) ~ "ocu_asalariado",
-                   ocupacion_ocu %in% c(4) ~ "ocu_propia",
-                   ocupacion_ocu %in% c(5) ~ "ocu_patron",
-                   ocupacion_ocu %in% c(6, 7, 9) ~ "ocu_otro",
-                   TRUE ~ "no_ocu")), 
+                                 TRUE ~ NA_character_)), 
                
                ocupacion_des_f = factor(case_when(
                                  ocupacion_des %in% c(1, 2) ~ "Asal_formal",
@@ -336,21 +279,12 @@ test <- pre_test %>%
                                  ocupacion_ocu %in% c(6, 7) ~ "Sin_remuneracion",
                                  TRUE ~ NA_character_)), 
                
-               tipo_trabajo = factor(case_when(
-                             ocupacion_ocu %in% c(1, 2, 3, 8) ~ "ocu_asalariado",
-                             ocupacion_ocu %in% c(4) ~ "ocu_propia",
-                             ocupacion_ocu %in% c(5) ~ "ocu_patron",
-                             ocupacion_ocu %in% c(6, 7, 9) ~ "ocu_otro",
-                             TRUE ~ "no_ocu")),
-               
-               
                ocupacion_des_f = factor(case_when(
                                  ocupacion_des %in% c(1, 2) ~ "Asal_formal",
                                  ocupacion_des %in% c(4, 5) ~ "Cuenta_propia_empleador",
                                  ocupacion_des %in% c(3, 8, 9) ~ "Informal_precario",
                                  ocupacion_des %in% c(6, 7) ~ "Sin_remuneracion",
-                                 TRUE ~ NA_character_))
-               )
+                                 TRUE ~ NA_character_)))
 
 
 # Normalizar variables numericas
