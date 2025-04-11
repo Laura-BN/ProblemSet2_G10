@@ -168,7 +168,7 @@ predictSample <- test_raw %>%
 best_params <- Xgboost_tree$bestTune
 
 # (Opcional: redondear algunos para nombre más corto)
-name <- sprintf("XGB_D_cv_%dfolds_n%d_d%d_eta%.2f_g%.1f_cs%.2f_mc%d_ss%.2f.csv",
+name <- sprintf("XGB_E_cv_%dfolds_n%d_d%d_eta%.2f_g%.1f_cs%.2f_mc%d_ss%.2f.csv",
                 fitControl$number,
                 best_params$nrounds,
                 best_params$max_depth,
@@ -226,7 +226,7 @@ plot_importance
 
 # Guardar el gráfico
 ggsave(
-  filename = file.path(stores_path, "importancia_variables_xgboostD.png"),
+  filename = file.path(stores_path, "importancia_variables_xgboostE.png"),
   plot = plot_importance,
   width = 8,
   height = 6,
@@ -258,7 +258,7 @@ plot(thresholds, f1_scores, type = "l", col = "blue", lwd = 2,
 abline(v = best_thresh, col = "red", lty = 2)
 
 # Guardar el gráfico base en un archivo PNG
-png(filename = file.path(stores_path, "umbral_f1_xgboostD.png"),
+png(filename = file.path(stores_path, "umbral_f1_xgboostE.png"),
     width = 800, height = 600)
 
 # Crear gráfico base
