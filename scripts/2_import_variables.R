@@ -39,7 +39,7 @@ intersect(colnames(test_hogares), colnames(train_hogares))
 # Crear lista de variables relacionadas con ingresos
 vars_ingresos <- c("P6510", "P6545", "P6580", "P6585s1", "P6585s2", "P6585s3", "P6585s4",
                    "P6590", "P6600", "P6620", "P6630s1", "P6630s2", "P6630s3", "P6630s4", "P6630s6",
-                   "P7472", "P7495", "P7500s2", "P7500s3", "P7505")
+                   "P7472", "P7495", "P7500s2", "P7500s3", "P7505", "P7422")
 
 
 # Variables para la base train personas
