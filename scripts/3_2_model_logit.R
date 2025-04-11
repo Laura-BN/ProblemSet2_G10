@@ -6,13 +6,14 @@ train = readRDS(file.path(stores_path, "upsampled_train_data.rds"))
 # train = readRDS(file.path(stores_path, "train_data.rds"))
 test  = readRDS(file.path(stores_path, "test_data.rds"))
 
-colnames(train)
-Pobre_num = train$Pobre_d # para calcular los indicadores de rendimiento
-
+train = train[, !duplicated(colnames(train))]
 train = train %>% dplyr::mutate(Pobre_d = ifelse(Pobre == "Pobre", 1, 0))
 
+colnames(train)
+Pobre_num = train$Pobre_d # para calcular los indicadores de rendimiento
+train = train %>% dplyr::mutate(Pobre_d = ifelse(Pobre == "Pobre", 1, 0))
 table(train$Pobre_d)
-"hacinamiento_z"
+
 #------------------------------------------------------------------------------#
 # 1. Modelos ----
 #------------------------------------------------------------------------------#
@@ -186,7 +187,7 @@ Pobre_num = train$Pobre # para calcular los indicadores de rendimiento
 F1_Score(y_pred = predict(logit_1, newdata = train, type = "raw"), y_true = Pobre_num, positive = "Pobre")
 F1_Score(y_pred = predict(logit_2, newdata = train, type = "raw"), y_true = Pobre_num, positive = "Pobre")
 F1_Score(y_pred = predict(logit_3, newdata = train, type = "raw"), y_true = Pobre_num, positive = "Pobre")
-F1_Score(y_pred = predict(logit_4, newdata = train, type = "raw"), y_true = Pobre_num, positive = "Pobre")
+F1_Score(y_pred = predict(logit_4, newdata = train, type = "raw"), y_true = Pobre_num, positive = "Pobre") # Este es el modelo que mejor da en Kaggle, y el que mejora más respecto a los anteriores, los logit 5 y 6 mejoran muy leve y podría sobreajustar por la complejidad introducida
 F1_Score(y_pred = predict(logit_5, newdata = train, type = "raw"), y_true = Pobre_num, positive = "Pobre")
 F1_Score(y_pred = predict(logit_6, newdata = train, type = "raw"), y_true = Pobre_num, positive = "Pobre")
 
@@ -196,7 +197,7 @@ F1_Score(y_pred = predict(logit_6, newdata = train, type = "raw"), y_true = Pobr
 #------------------------------------------------------------------------------#
 
 predictSample = test   %>% 
-                mutate(pobre_lab = predict(logit_6, newdata = test, type = "raw")    ## predicted class labels
+                mutate(pobre_lab = predict(logit_4, newdata = test, type = "raw")    ## predicted class labels
                 )  %>% select(id, pobre_lab)
 
 head(predictSample)
