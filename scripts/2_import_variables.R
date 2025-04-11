@@ -176,12 +176,12 @@ test_personas_hogar <- test_personas_vars  %>%
 train_hogares_vars <- train_hogares %>% 
                       mutate(hacinamiento = Nper/P5000, # Personas por cuarto en el hogar
                              viv_noPropia = ifelse(P5090 == 1 | P5090 == 2, 0L, 1L)) %>%
-                      select(id, Clase, Dominio, hacinamiento, Nper, Pobre, viv_noPropia) # Seleccionar variables de interes
+                      select(id, Clase, Dominio, hacinamiento, Nper, Pobre, viv_noPropia, Lp) # Seleccionar variables de interes
 
 test_hogares_vars <- test_hogares %>% 
                       mutate(hacinamiento = Nper/P5000, # Personas por cuarto en el hogar
                              viv_noPropia = ifelse(P5090 == 1 | P5090 == 2, 0L, 1L)) %>%
-                      select(id, Clase, Dominio, hacinamiento, Nper, viv_noPropia) # Seleccionar variables de interes
+                      select(id, Clase, Dominio, hacinamiento, Nper, viv_noPropia, Lp) # Seleccionar variables de interes
 
 
 # 5. CREAR VARIABLES A NIVEL DE HOGAR ------------------------------------------

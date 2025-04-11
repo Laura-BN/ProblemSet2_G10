@@ -219,48 +219,50 @@ adaboost_tree <- train(
 
 adaboost_tree
 
-table(train$Pobre_num)
 
-pred_prob <- predict(adaboost_tree,
-                     newdata = train, 
-                     type = "prob")   
+#------------------------------------------------------------------------------#
+# AUC y F1
+#------------------------------------------------------------------------------#
 
-F1_Score(y_pred = pred_prob, y_true = Pobre_num, positive = "1")
+# Predicciones de validación cruzada
+val_preds <- adaboost_tree$pred
+
+# AUC en validación cruzada
+auc_val <- Metrics::auc(actual = ifelse(val_preds$obs == "Si", 1, 0), 
+                        predicted = val_preds$Si)
+cat("AUC en validación (AdaBoost):", round(auc_val, 5), "\n")
+
+# F1 en validación cruzada
+f1_val <- F1_Score(y_true = ifelse(val_preds$obs == "Si", 1, 0), 
+                   y_pred = ifelse(val_preds$Si >= 0.5, 1, 0), 
+                   positive = "1")
+cat("F1 Score en validación (AdaBoost):", round(f1_val, 4), "\n")
 
 
 #------------------------------------------------------------------------------#
 # Resultados para Kaggle
 #------------------------------------------------------------------------------#
 
-predictSample = test   %>% 
-  mutate(pobre_lab = predict(adaboost_tree, newdata = test, type = "raw")    ## predicted class labels
-  )  %>% select(id, pobre_lab)
+# Extraer mejores parámetros
+best_params <- adaboost_tree$bestTune
 
-head(predictSample)
-table(predictSample$pobre_lab)
+# Crear nombre usando los parámetros
+name_boosting <- paste0(
+  "AdaBoost_",
+  "mfinal", best_params$mfinal, "_",
+  "maxdepth", best_params$maxdepth, "_",
+  "coef", best_params$coeflearn,
+  ".csv"
+)
 
-
-predictSample = predictSample %>% 
-  mutate(pobre = ifelse(pobre_lab == "1", 1, 0)) %>% 
+# Guardar predicciones para Kaggle
+preds_test_boost <- predict(adaboost_tree, newdata = test)
+predictSample_boost <- test %>%
+  mutate(pobre_lab = preds_test_boost) %>%
+  mutate(pobre = ifelse(pobre_lab == "Si", 1, 0)) %>%
   select(id, pobre)
 
-head(predictSample)
-table(predictSample$pobre)
+# Escribir el archivo CSV
+write.csv(predictSample_boost, file.path(stores_path, name_boosting), row.names = FALSE)
 
-
-zip_path = file.path(raw_path, "uniandes-bdml-202510-ps-2.zip")
-sample_submission = read_csv(unz(zip_path, "sample_submission.csv"))
-head(sample_submission)
-
-table(sample_submission$pobre)
-
-# Replace '.' with '_' in the numeric values converted to strings
-# lambda_str <- gsub( "\\.", "_", as.character(round(logit_4$bestTune$lambda, 4)))
-# alpha_str <- gsub("\\.", "_", as.character(logit_4$bestTune$alpha))
-
-name = paste0(
-  "Boosting_1",
-  ".csv") 
-
-write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
 
