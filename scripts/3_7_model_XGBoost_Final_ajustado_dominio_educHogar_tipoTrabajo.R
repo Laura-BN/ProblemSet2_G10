@@ -63,14 +63,15 @@ scale_pos_weight <- num_neg / num_pos
 scale_pos_weight
 
 # Grilla de hiperparámetros con ajustes adicionales
+# Grilla de hiperparámetros con ajustes adicionales
 grid_xgboost <- expand.grid(
-                nrounds = 500,              # Número de rondas (iteraciones)
-                max_depth = 7,             # Profundidad máxima del árbol
-                eta = 0.05,           # Tasa de aprendizaje
-                gamma = 0,               # Penalización por complejidad
-                min_child_weight = 5,      # Peso mínimo de un nodo hijo
-                colsample_bytree = 0.6,     # Fracción de características por árbol
-                subsample = 0.7                  # Fracción de muestras para cada árbol
+                nrounds = c(250, 500),              # Número de rondas (iteraciones)
+                max_depth = c(3, 5, 7),             # Profundidad máxima del árbol
+                eta = c(0.01, 0.05, 0.1),           # Tasa de aprendizaje
+                gamma = c(0, 0.1, 1),               # Penalización por complejidad
+                min_child_weight = c(1, 3, 5),      # Peso mínimo de un nodo hijo
+                colsample_bytree = c(0.6, 0.8),     # Fracción de características por árbol
+                subsample = c(0.7)                  # Fracción de muestras para cada árbol
               )  
 
 grid_xgboost
