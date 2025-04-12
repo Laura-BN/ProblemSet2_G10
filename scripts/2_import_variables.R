@@ -168,7 +168,7 @@ test_personas_vars <- test_personas %>%
 # Incluir el indicador de ingreso aproximado en test_personas_vars
 
 test_personas_vars <- test_personas_vars %>%
-  mutate(across(all_of(vars_ingresos), ~ ifelse(. == 1, 1, 0)))
+                      mutate(across(all_of(vars_ingresos), ~ ifelse(. == 1, 1, 0)))
 
 test_personas_vars$ind_ingresos_aprox <- rowSums(test_personas_vars[ , vars_ingresos], na.rm = TRUE)
 
@@ -280,13 +280,35 @@ test_personas_hogar <- test_personas_vars  %>%
 
 train_hogares_vars <- train_hogares %>% 
                       mutate(hacinamiento = Nper/P5000, # Personas por cuarto en el hogar
-                             viv_noPropia = ifelse(P5090 == 1 | P5090 == 2, 0L, 1L)) %>%
-                      select(id, Clase, Dominio, hacinamiento, Nper, Pobre, viv_noPropia, Lp) # Seleccionar variables de interes
+                             viv_noPropia = ifelse(P5090 == 1 | P5090 == 2, 0L, 1L),
+                             pago_arriendo = case_when(
+                                               is.na(P5140) ~ "no_arriendo",
+                                               P5140 >= 0 & P5140 <= 500000 ~ "arriendo_bajo",
+                                               P5140 > 500000 & P5140 <= 1500000 ~ "arriendo_medio",
+                                               P5140 > 1500000 ~ "arriendo_alto"
+                                             ),
+                             pago_arriendo = factor(
+                                         pago_arriendo,
+                                         levels = c("no_arriendo", "arriendo_bajo", "arriendo_medio", "arriendo_alto")
+                                       )
+                             ) %>%
+                      select(id, Clase, Dominio, hacinamiento, Nper, Pobre, viv_noPropia, Lp, pago_arriendo) # Seleccionar variables de interes
 
 test_hogares_vars <- test_hogares %>% 
                       mutate(hacinamiento = Nper/P5000, # Personas por cuarto en el hogar
-                             viv_noPropia = ifelse(P5090 == 1 | P5090 == 2, 0L, 1L)) %>%
-                      select(id, Clase, Dominio, hacinamiento, Nper, viv_noPropia, Lp) # Seleccionar variables de interes
+                             viv_noPropia = ifelse(P5090 == 1 | P5090 == 2, 0L, 1L),
+                             pago_arriendo = case_when(
+                                               is.na(P5140) ~ "no_arriendo",
+                                               P5140 >= 0 & P5140 <= 500000 ~ "arriendo_bajo",
+                                               P5140 > 500000 & P5140 <= 1500000 ~ "arriendo_medio",
+                                               P5140 > 1500000 ~ "arriendo_alto"
+                                             ),
+                             pago_arriendo = factor(
+                                              pago_arriendo,
+                                             levels = c("no_arriendo", "arriendo_bajo", "arriendo_medio", "arriendo_alto")
+                                            )
+                      ) %>%
+                      select(id, Clase, Dominio, hacinamiento, Nper, viv_noPropia, Lp, pago_arriendo) # Seleccionar variables de interes
 
 
 # 5. CREAR VARIABLES A NIVEL DE HOGAR ------------------------------------------
