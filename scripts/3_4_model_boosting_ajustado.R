@@ -1,9 +1,9 @@
 #------------------------------------------------------------------------------#
-# Modelos: Regresión lineal y logit ----
+# Modelos: bagging y boosting ----
 #------------------------------------------------------------------------------#
 
 train = readRDS(file.path(stores_path, "upsampled_train_data.rds"))
-# train = readRDS(file.path(stores_path, "train_data.rds"))
+#train = readRDS(file.path(stores_path, "train_data.rds"))
 test  = readRDS(file.path(stores_path, "test_data.rds"))
 
 intersect(colnames(train), colnames(test))
@@ -15,7 +15,7 @@ intersect(colnames(train), colnames(test))
 train = train[, !duplicated(colnames(train))]
 train = train %>% dplyr::mutate(Pobre_d = ifelse(Pobre == "Pobre", 1, 0))
 
-Pobre_num = train$Pobre_d # para calcular los indicadores de rendimiento
+#Pobre_num = ifelse(train$Pobre_d == "Si", 1, 0)
 
 #---------------------------
 # Ajuste de variables factor
@@ -43,7 +43,7 @@ table(train$jefe_salud_sub)
 table(train$Pobre)
 
 train = train %>% mutate(
-        Pobre_d        = factor(Pobre_d, levels=c(0,1),labels=c("No","Si")),
+        Pobre_d = ifelse(Pobre == "Pobre", 1, 0),
         hacinamiento_f = factor(ifelse(hacinamiento > 3, 1, 0), labels = c("Si", "No")), # porque es el a lo que se aproxima el 3 cuantil
         jefe_mayor_f   = factor(ifelse(jefe_edad > 49, 1, 0), labels = c("Si", "No")), # puede ser indicador de que la persona que sostiene el hogar tenga más o menos dinámica laboral
         N_menores_f    = factor(ifelse(N_menores > 1.6, 1, 0), labels = c("Si", "No")), # número promedio hijas/os por mujer en Colombia (podrían ser más grandes pero por practicidad)
@@ -52,8 +52,7 @@ train = train %>% mutate(
         Mayor_dependiente_f = factor(ifelse(N_mayor_dependiente >= 1, 1, 0), labels = c("Si", "No")),
         jefe_cot_pens  = factor(ifelse(jefe_pension == "Jefe_af_pension", 1, 0), labels = c("Si", "No")),
         jefe_cont_salud  = factor(ifelse(jefe_salud_sub == "Jefe_salud_contributivo", 1, 0), labels = c("Si", "No")), 
-        N_desocupados_f = factor(ifelse(N_desocupados >= 1, 1, 0), labels = c("Si", "No"))
-        
+        N_desocupados_f = factor(ifelse(N_desocupados >= 1, 1, 0), labels = c("Si", "No")),
         )
 
 test = test %>% mutate(
@@ -82,11 +81,9 @@ X_2 = c("jefe_edad",
         "hacinamiento",
         "max_nivel_educ", 
         "Clase",
-        "viv_noPropia", 
-        "Lp", 
+        "viv_noPropia",
         "prop_fuentes_ing", 
-        "prop_ina_pet", 
-        "Dominio",
+        "prop_ina_pet",
         "prop_ocu_pet",
         "jefe_pension",
         "prop_menores_pob",
@@ -94,7 +91,7 @@ X_2 = c("jefe_edad",
         "promedio_anios_educ",
         "tipo_trabajo")
 
-table(train$N_desocupados)
+#table(train$N_desocupados)
 
 #------------------------------------------------------------------------------#
 # 1. Modelos ----
@@ -105,88 +102,76 @@ table(train$N_desocupados)
 #-----------------------
 
 bagged_tree = ranger::ranger(
-              formula(paste0("Pobre_d ~", paste0(X_2, collapse = " + "))),
+              formula(paste0("Pobre ~", paste0(X_2, collapse = " + "))),
               data = train,
               num.trees= 500, ## Numero de bootstrap samples y arboles a estimar. Default 500  
-              # mtry = 9,
-              mtry = sqrt(length(X_2)),
+              mtry = 8,
               min.node.size  = 1, ## Numero minimo de observaciones en un nodo para intentar 
+              probability = TRUE  # clave para obtener probabilidades
             ) 
 bagged_tree
 
 table(train$Pobre)
 table(train$Pobre_d)
 
-# Clacular predicciones
+# Calcular predicciones
 
-bagged_pred = predict(
-              bagged_tree,
-              data = train, # toca en train porque en test no existe "Pobre"
-              predict.all = TRUE # para obtener la predicción de cada arbol. 
-            )
-
-# Guardamos la predicción de cada árbol dataframe
-pred.bag_ranger = as.data.frame( bagged_pred$predictions )
+# Guardamos la predicción de cada árbol en forma de dataframe
+pred.bag_ranger <- as.data.frame( bagged_tree$predictions )
 
 # Visualizemoslo
 head(tibble(pred.bag_ranger))
 
-# Calcular las probabilidades de Default (promedio todos los árboles)
-ntrees = ncol( pred.bag_ranger )
-phat.bag = rowSums(pred.bag_ranger == "Si") / ntrees
 
+# Calcular las probabilidades (promedio de todas las predicciones de los árboles)
+phat.bag <- rowMeans(pred.bag_ranger[, 1, drop = FALSE]) # Probabilidades de ser "Pobre"
 
-length(Pobre_num)
-length(phat.bag)
 
 # Calcular y guardar AUC de bagging
 aucval_bag = Metrics::auc(
-             actual = Pobre_num,
-             predicted = phat.bag)
+              actual = train$Pobre_d,
+              predicted = phat.bag)
+
 aucval_bag
 
+# Umbral de 0.5 para obtener las predicciones binarias
+yhat.bag <- ifelse(phat.bag >= 0.5, 1, 0)
+
 # Calcular el F1
-yhat.bag = ifelse(phat.bag >= 0.5, 1, 0) 
-F1_Score(y_pred = yhat.bag, y_true = Pobre_num, positive = "1")
+F1_Score(
+  y_pred = factor(yhat.bag, levels = c(1, 0)),
+  y_true = factor(train$Pobre_d, levels = c(1, 0)),
+  positive = "1"
+)
 
 
 #------------------------------------------------------------------------------#
 # Resultados para Kaggle
 #------------------------------------------------------------------------------#
 
+# Calcular las probabilidades para test
 preds_test <- predict(bagged_tree, data = test)$predictions
+
+# Asumimos que preds_test tiene columnas: Pobre, No_pobre
+pred_pobre <- preds_test[, 1]
+
+# Convertir las probabilidades en etiquetas binarias (0 o 1)
 predictSample <- test %>%
-  mutate(pobre_lab = preds_test) %>%
-  select(id, pobre_lab)
-
-
-head(predictSample)
-
-predictSample = predictSample %>% 
-  mutate(pobre = ifelse(pobre_lab == "Si", 1, 0)) %>% 
-  select(id, pobre)
-
-predictSample = predictSample %>% arrange(id)
+  mutate(pobre_lab = ifelse(pred_pobre >= 0.5, 1, 0)) %>%
+  select(id, pobre_lab) %>%
+  rename(pobre = pobre_lab) %>%
+  arrange(id)
 
 head(predictSample)
-table(predictSample$pobre)
 
-zip_path = file.path(raw_path, "uniandes-bdml-202510-ps-2.zip")
-sample_submission = read_csv(unz(zip_path, "sample_submission.csv"))
-head(sample_submission)
-
-table(sample_submission$pobre)
-
-
-# Replace '.' with '_' in the numeric values converted to strings
-# lambda_str <- gsub( "\\.", "_", as.character(round(logit_4$bestTune$lambda, 4)))
-# alpha_str <- gsub("\\.", "_", as.character(logit_4$bestTune$alpha))
-
+# Guardar CSV
 name = paste0(
-  "Bagging_2",
-  ".csv") 
+  "Bagging_3",
+  ".csv"
+)
 
 write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
+
 
 
 #-----------------------
@@ -206,18 +191,18 @@ ctrl<- trainControl(method = "cv",
                     summaryFunction = fiveStats,
                     classProbs = TRUE, 
                     verboseIter = TRUE,   # muestra el progreso
-                    savePredictions = T)
+                    savePredictions = TRUE)
 
 adagrid = expand.grid(
-          mfinal = c( 50, 300 ,500),
-          maxdepth = c(1,2,5),
+          mfinal = c(50, 300 ,500),
+          maxdepth = c(2,3,5),
           coeflearn = c('Breiman','Freund'))
 
 
 set.seed(91519) # important set seed. 
 
 adaboost_tree <- train(
-                       formula(paste0("Pobre_d ~", paste0(X_2, collapse = " + "))),
+                       formula(paste0("Pobre ~", paste0(X_2, collapse = " + "))),
                        data = train, 
                        method = "AdaBoost.M1",  # para implementar el algoritmo antes descrito
                        trControl = ctrl,
@@ -227,48 +212,70 @@ adaboost_tree <- train(
 
 adaboost_tree
 
-table(train$Pobre_num)
 
-pred_prob <- predict(adaboost_tree,
-                     newdata = train, 
-                     type = "prob")   
+# Cálculo del AUC sobre el conjunto de entrenamiento ---------------------------
 
-F1_Score(y_pred = pred_prob, y_true = Pobre_num, positive = "1")
+# Obtener las probabilidades predichas para el conjunto de entrenamiento
+pred_probs_train <- predict(adaboost_tree, newdata = train, type = "prob")
+
+# Extraer la probabilidad de la clase "Pobre"
+prob_pobre_train <- pred_probs_train$Pobre
+
+# Cálculo del AUC utilizando la librería pROC
+roc_curve_train <- roc(train$Pobre, prob_pobre_train)
+
+# Mostrar AUC
+auc(roc_curve_train)
+
+
+# Cálculo del AUC sobre el conjunto de entrenamiento ---------------------------
+
+# Obtener las clases predichas para el conjunto de entrenamiento (con un umbral de 0.5)
+yhat_train <- ifelse(prob_pobre_train >= 0.5, 1, 0)
+
+# Calcular el F1 Score
+library(caret)
+F1_Score_train <- F1_Score(
+  y_pred = factor(yhat_train, levels = c(1, 0)),
+  y_true = factor(train$Pobre, levels = c(1, 0)),
+  positive = "1"
+)
+
+# Mostrar el F1 Score
+F1_Score_train
 
 
 #------------------------------------------------------------------------------#
 # Resultados para Kaggle
 #------------------------------------------------------------------------------#
 
-predictSample = test   %>% 
-  mutate(pobre_lab = predict(adaboost_tree, newdata = test, type = "raw")    ## predicted class labels
-  )  %>% select(id, pobre_lab)
+# Realizar predicciones sobre el conjunto de test (con probabilidades)
+pred_probs_test <- predict(adaboost_tree, newdata = test, type = "prob")
 
+# Ver las primeras predicciones
+head(pred_probs_test)
+
+# Crear una predicción binarizada (0 o 1) usando un umbral de 0.5
+pred_class_test <- ifelse(pred_probs_test$Pobre >= 0.5, 1, 0)
+
+# Crear un dataframe para Kaggle con las predicciones
+predictSample <- test %>%
+  mutate(pobre_pred = pred_class_test) %>%
+  select(id, pobre_pred) %>%
+  arrange(id)  # Si necesitas ordenar por 'id'
+
+# Ver las primeras filas del dataframe
 head(predictSample)
-table(predictSample$pobre_lab)
 
+# Extraer los parámetros óptimos
+best_params <- adaboost_tree$bestTune
 
-predictSample = predictSample %>% 
-  mutate(pobre = ifelse(pobre_lab == "1", 1, 0)) %>% 
-  select(id, pobre)
+# Crear el nombre del archivo con los parámetros
+file_name <- paste0("Boosting_AdaBoost", 
+                    "mfinal", best_params$mfinal, 
+                    "_maxdepth", best_params$maxdepth, 
+                    "_coeflearn", best_params$coeflearn, 
+                    ".csv")
 
-head(predictSample)
-table(predictSample$pobre)
-
-
-zip_path = file.path(raw_path, "uniandes-bdml-202510-ps-2.zip")
-sample_submission = read_csv(unz(zip_path, "sample_submission.csv"))
-head(sample_submission)
-
-table(sample_submission$pobre)
-
-# Replace '.' with '_' in the numeric values converted to strings
-# lambda_str <- gsub( "\\.", "_", as.character(round(logit_4$bestTune$lambda, 4)))
-# alpha_str <- gsub("\\.", "_", as.character(logit_4$bestTune$alpha))
-
-name = paste0(
-  "Boosting_2",
-  ".csv") 
-
+# Guardar el archivo CSV
 write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
-
