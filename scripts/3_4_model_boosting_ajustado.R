@@ -234,10 +234,9 @@ auc(roc_curve_train)
 yhat_train <- ifelse(prob_pobre_train >= 0.5, 1, 0)
 
 # Calcular el F1 Score
-library(caret)
 F1_Score_train <- F1_Score(
   y_pred = factor(yhat_train, levels = c(1, 0)),
-  y_true = factor(train$Pobre, levels = c(1, 0)),
+  y_true = factor(train$Pobre_d, levels = c(1, 0)),
   positive = "1"
 )
 
@@ -278,4 +277,4 @@ file_name <- paste0("Boosting_AdaBoost",
                     ".csv")
 
 # Guardar el archivo CSV
-write.csv(predictSample, file.path(stores_path, name), row.names = FALSE)
+write.csv(predictSample, file.path(stores_path, file_name), row.names = FALSE)
