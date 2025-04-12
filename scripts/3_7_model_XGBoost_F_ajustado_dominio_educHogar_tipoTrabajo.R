@@ -105,7 +105,7 @@ Xgboost_tree <- train(
                   N_personas + hacinamiento + 
                   max_nivel_educ + Clase +
                   viv_noPropia + Lp + prop_fuentes_ing + prop_ina_pet + Dominio +
-                  prop_ocu_pet + jefe_pension + prop_menores_pob + prop_mayores_pob
+                  prop_ocu_pet + jefe_pension + prop_menores12_pob + prop_mayores_pob
                   + prop_anios_educ + tipo_trabajo + prop_des_pet + jefe_ocu + N_mujer,
                 data = train_raw, 
                 method = "xgbTree", 

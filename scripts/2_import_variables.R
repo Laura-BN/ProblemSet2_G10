@@ -57,6 +57,7 @@ train_personas_vars <- train_personas %>%
                       jefe_edad2 = ifelse(P6050 == 1, (P6040^2), NA_real_), # Edad jefe de hogar al cuadrado
                       jefe_ocu = if_else(Oc == 1, 1L, 0L, missing = 0L), # Jefe(a) de hogar ocupado
                       menor = ifelse(P6040<=6,1,0), # Persona menor en el hogar
+                      menor12 = ifelse(P6040<=12,1,0), # Persona menores 10 anios en el hogar
                       mayor_dependiente = ifelse(P6040>=60 & (Ina==1 | Des==1), 1 ,0), # Persona mayor dependiente en el hogar
                       nivel_educ = ifelse(P6210==9,0,P6210), # Nivel educativo, reemplazar con 0 el nivel no sabe, no informa
                       ocupado = ifelse(is.na(Oc),0,1), # Variable ocupado
@@ -108,7 +109,7 @@ train_personas_vars <- train_personas_vars %>%
                              jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
                              nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu,
                              antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, 
-                             ind_ingresos_aprox, anios_educ, P6040)
+                             ind_ingresos_aprox, anios_educ, P6040, menor12)
 
 
 # Variables para la base test personas
@@ -124,6 +125,7 @@ test_personas_vars <- test_personas %>%
                         jefe_edad2 = ifelse(P6050 == 1, (P6040^2), NA_real_), # Edad jefe de hogar al cuadrado
                         jefe_ocu = if_else(Oc == 1, 1L, 0L, missing = 0L), # Jefe(a) de hogar ocupado
                         menor = ifelse(P6040<=6,1,0), # Persona menor en el hogar
+                        menor12 = ifelse(P6040<=12,1,0), # Persona menores 10 anios en el hogar
                         mayor_dependiente = ifelse(P6040>=60 & (Ina==1 | Des==1), 1 ,0), # Persona mayor dependiente en el hogar
                         nivel_educ = ifelse(P6210==9,0,P6210), # Nivel educativo, reemplazar con 0 el nivel no sabe, no informa
                         ocupado = ifelse(is.na(Oc),0,1), # Variable ocupado
@@ -175,7 +177,7 @@ test_personas_vars <- test_personas_vars %>%
                              jefe_pension, jefe_edad, jefe_edad2, menor, mayor_dependiente,
                              nivel_educ, ocupado, desocupado, inactivo, jefe_nivel_educ, jefe_ocu,
                              antiguedad_empleo, ocupacion_ocu, ocupacion_des, subsidios, 
-                             ind_ingresos_aprox, anios_educ, P6040)
+                             ind_ingresos_aprox, anios_educ, P6040, menor12)
 
 
 
@@ -191,6 +193,7 @@ train_personas_hogar_B <- train_personas_vars  %>%
                                   N_ocupados = sum(ocupado, na.rm=TRUE), # Ocupados por hogar
                                   N_pet = sum(Pet, na.rm = TRUE), # Personas en la PET por hogar
                                   N_menores = sum(menor, na.rm = TRUE), # Personas menores en el hogar
+                                  N_menores12 = sum(menor12, na.rm = TRUE), # Personas menores 10 anios en el hogar
                                   N_mayor_dependiente = sum(mayor_dependiente, na.rm = TRUE), # Adultos mayores dependientes en el hogar
                                   N_mujer = sum(mujer, na.ram=TRUE), # Mujeres en el hogar
                                   max_nivel_educ = max(nivel_educ, na.rm=TRUE), # Maximo nivel educativo en el hogar
@@ -208,6 +211,7 @@ train_personas_hogar_B <- train_personas_vars  %>%
                                prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
                                prop_fuentes_ing = total_ind_ingresos/N_personas, # Proporcion fuentes de ingreso por persona
                                prop_menores_pob = N_menores/N_personas, # Proporcion menores hogar
+                               prop_menores12_pob = N_menores12/N_personas, # Proporcion menores 10 anios hogar
                                prop_mayores_pob = N_mayor_dependiente/N_personas, # Proporcion personas mayores hogar
                                prop_anios_educ = anios_educ_hogar/N_personas # Anios promedio educacion hogar
                                ) %>% 
@@ -222,6 +226,7 @@ test_personas_hogar_B <- test_personas_vars  %>%
                                   N_ocupados = sum(ocupado, na.rm=TRUE), # Ocupados por hogar
                                   N_pet = sum(Pet, na.rm = TRUE), # Personas en la PET por hogar
                                   N_menores = sum(menor, na.rm = TRUE), # Personas menores en el hogar
+                                  N_menores12 = sum(menor12, na.rm = TRUE), # Personas menores 10 anios en el hogar
                                   N_mayor_dependiente = sum(mayor_dependiente, na.rm = TRUE), # Adultos mayores dependientes en el hogar
                                   N_mujer = sum(mujer, na.ram=TRUE), # Mujeres en el hogar
                                   max_nivel_educ = max(nivel_educ, na.rm=TRUE), # Maximo nivel educativo en el hogar
@@ -239,6 +244,7 @@ test_personas_hogar_B <- test_personas_vars  %>%
                                prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
                                prop_fuentes_ing = total_ind_ingresos/N_personas, # Proporcion fuentes de ingreso por persona
                                prop_menores_pob = N_menores/N_personas, # Proporcion menores hogar
+                               prop_menores12_pob = N_menores12/N_personas, # Proporcion menores 10 anios hogar
                                prop_mayores_pob = N_mayor_dependiente/N_personas, # Proporcion personas mayores hogar
                                prop_anios_educ = anios_educ_hogar/N_personas # Anios promedio educacion hogar
                                ) %>% 
