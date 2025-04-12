@@ -269,3 +269,5 @@ abline(v = best_thresh, col = "red", lty = 2)
 
 # Cerrar dispositivo gráfico
 dev.off()
+
+
