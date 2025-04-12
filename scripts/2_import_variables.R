@@ -200,13 +200,16 @@ train_personas_hogar_B <- train_personas_vars  %>%
                                                         sum(P6040 >= 15 & !is.na(anios_educ)) > 0,
                                                         mean(anios_educ[P6040 >= 15], na.rm = TRUE),
                                                         0
-                                                        )
+                                                        ),
+                                  anios_educ_hogar = sum(anios_educ, na.ram=TRUE), # Anios educacion hogar
                                   ) %>%
-                        mutate(prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
+                        mutate(prop_des_pet = N_desocupados/N_personas, # Proporcion desocupados / pt
+                               prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
                                prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
                                prop_fuentes_ing = total_ind_ingresos/N_personas, # Proporcion fuentes de ingreso por persona
                                prop_menores_pob = N_menores/N_personas, # Proporcion menores hogar
-                               prop_mayores_pob = N_mayor_dependiente/N_personas # Proporcion personas mayores hogar
+                               prop_mayores_pob = N_mayor_dependiente/N_personas, # Proporcion personas mayores hogar
+                               prop_anios_educ = anios_educ_hogar/N_personas # Anios promedio educacion hogar
                                ) %>% 
                         ungroup()
 
@@ -228,13 +231,16 @@ test_personas_hogar_B <- test_personas_vars  %>%
                                     sum(P6040 >= 15 & !is.na(anios_educ)) > 0,
                                     mean(anios_educ[P6040 >= 15], na.rm = TRUE),
                                     0
-                                  )
+                                    ),
+                                  anios_educ_hogar = sum(anios_educ, na.ram=TRUE), # Anios educacion hogar
                                   ) %>%
-                        mutate(prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
+                        mutate(prop_des_pet = N_desocupados/N_personas, # Proporcion desocupados / pt
+                               prop_ina_pet = N_inactivos/N_personas, # Proporcion inactivos / pt
                                prop_ocu_pet = N_ocupados/N_personas, # Proporcion ocupados / pt
                                prop_fuentes_ing = total_ind_ingresos/N_personas, # Proporcion fuentes de ingreso por persona
                                prop_menores_pob = N_menores/N_personas, # Proporcion menores hogar
-                               prop_mayores_pob = N_mayor_dependiente/N_personas # Proporcion personas mayores hogar
+                               prop_mayores_pob = N_mayor_dependiente/N_personas, # Proporcion personas mayores hogar
+                               prop_anios_educ = anios_educ_hogar/N_personas # Anios promedio educacion hogar
                                ) %>% 
                         ungroup()
 
@@ -298,6 +304,7 @@ pre_test$jefe_salud_sub[is.na(pre_test$jefe_salud_sub)] <- 1
 
 train <- pre_train %>%
         mutate(Pobre = factor(Pobre, levels=c(1,0), labels=c("Pobre","No_pobre")),
+               jefe_ocu = factor(jefe_ocu, levels = c(1, 0), labels = c("Jefe_ocu", "Jefe_no_ocu")),
                jefe_mujer = factor(jefe_mujer, levels = c(1, 0), labels = c("Jefe_mujer", "Jefe_hombre")),
                jefe_salud_sub = factor(jefe_salud_sub, levels = c(1, 0), labels = c("Jefe_salud_subsidiado", "Jefe_salud_contributivo")),
                jefe_pension = factor(jefe_pension, levels = c(1, 0), labels = c("Jefe_af_pension", "Jefe_no_af_pension"),),
@@ -331,6 +338,7 @@ train <- pre_train %>%
 
 test <- pre_test %>%
         mutate(jefe_mujer = factor(jefe_mujer, levels = c(1, 0), labels = c("Jefe_mujer", "Jefe_hombre")),
+               jefe_ocu = factor(jefe_ocu, levels = c(1, 0), labels = c("Jefe_ocu", "Jefe_no_ocu")),
                jefe_salud_sub = factor(jefe_salud_sub, levels = c(1, 0), labels = c("Jefe_salud_subsidiado", "Jefe_salud_contributivo")),
                jefe_pension = factor(jefe_pension, levels = c(1, 0), labels = c("Jefe_af_pension", "Jefe_no_af_pension")),
                Dominio = factor(Dominio),
