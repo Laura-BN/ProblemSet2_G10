@@ -1,0 +1,31 @@
+% latex table generated in R 4.4.2 by xtable 1.8-4 package
+% Sun Apr 13 14:16:57 2025
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrrr}
+  \hline
+variable & Pobre & No\_pobre & Total\_train & Total\_test \\ 
+  \hline
+Años promedio edu hogar & 23.31 & 27.19 & 26.41 & 26.31 \\ 
+  Desocupados hogar & 0.32 & 0.15 & 0.18 & 0.18 \\ 
+  Edad jefe hogar & 46.77 & 50.32 & 49.61 & 49.69 \\ 
+  Fuentes ingresos hogar & 1.16 & 2.78 & 2.46 & 2.39 \\ 
+  Hacinamiento & 1.53 & 0.95 & 1.06 & 1.06 \\ 
+  Inactivos & 1.45 & 0.92 & 1.03 & 1.04 \\ 
+  Línea pobreza & 265302.52 & 273079.15 & 271522.31 & 270984.52 \\ 
+  Mayores dependientes hogar & 0.27 & 0.32 & 0.31 & 0.31 \\ 
+  Menores & 0.64 & 0.26 & 0.33 & 0.34 \\ 
+  Mujeres & 3.24 & 2.62 & 2.74 & 2.75 \\ 
+  Ocupados & 1.26 & 1.57 & 1.50 & 1.51 \\ 
+  Personas hogar & 4.13 & 3.08 & 3.29 & 3.32 \\ 
+  Pet & 3.02 & 2.64 & 2.71 & 2.73 \\ 
+  Promedio años educ $>$ 15 años & 7.59 & 10.17 & 9.65 & 9.54 \\ 
+  Prop fuentes ingresos / persona & 0.32 & 1.01 & 0.87 & 0.84 \\ 
+  Prop inactivos/pet & 0.37 & 0.30 & 0.31 & 0.32 \\ 
+  Prop ocupados/pet & 0.31 & 0.54 & 0.50 & 0.50 \\ 
+  Proporcion mayores hogar & 0.10 & 0.13 & 0.12 & 0.12 \\ 
+  Proporcion menores hogar & 0.13 & 0.06 & 0.08 & 0.08 \\ 
+   \hline
+\end{tabular}
+\caption{Promedio variables según condición de pobreza y total - Bases train y test} 
+\end{table}
