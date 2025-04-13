@@ -345,7 +345,7 @@ test_numericas_total = test_numericas_total %>%
 factores_unido = merge(train_factores_unido, test_factores_total, by = c("variable", "valor"))
 
 
-sink(file.path(paste0(view_path, "/descriptivas_facotres.txt")))
+sink(file.path(paste0(view_path, "/descriptivas_factores.txt")))
 
 xtable(factores_unido, caption = "Distribución porcentual por factor, condición de pobreza y total - Bases train y test") %>%
   print(type = "latex", include.rownames = FALSE)
