@@ -67,7 +67,10 @@ p_load(tidyverse,
        pROC,
        recipes,
        vip,
-       MLmetrics)
+       MLmetrics,
+       xgboost,
+       DMwR2,
+       themis)
 
 #----------------------------------------------
 # Ejecutar scripts

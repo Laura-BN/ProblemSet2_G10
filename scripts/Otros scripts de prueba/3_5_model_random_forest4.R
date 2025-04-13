@@ -6,7 +6,6 @@
 
 # 1. IMPORTAR DATOS ------------------------------------------------------------
 
-up_train_raw <- readRDS(file.path(stores_path, "upsampled_train_data.rds"))
 train_raw <- readRDS(file.path(stores_path, "train_data.rds"))
 test_raw  <- readRDS(file.path(stores_path, "test_data.rds"))
 
@@ -14,7 +13,7 @@ test_raw  <- readRDS(file.path(stores_path, "test_data.rds"))
 # 2. PREPROCESAMIENTO ----------------------------------------------------------
 
 # Eliminar algunas variables que no entran en el modelo
-train_raw <- up_train_raw %>% select(-ends_with("_z"))
+train_raw <- train_raw %>% select(-ends_with("_z"))
 test_raw <- test_raw %>% select(-ends_with("_z"))
 
 # Crear algunas interacciones
@@ -60,12 +59,11 @@ table(validation$Pobre)
 rf<- ranger::ranger(
       Pobre ~ jefe_edad + jefe_mujer + jefe_edad2 + jefe_salud_sub +
         N_personas + hacinamiento + N_ocupados + N_inactivos +
-        N_menores + N_mayor_dependiente + max_nivel_educ + Clase +
-        inter_haci_tam, 
-      data = train,
-      num.trees= 2000, ## Numero de bootstrap samples y arboles a estimar. Default 500  
-      mtry= 6,   # N. var aleatoriamente seleccionadas en cada partición
-      min.node.size  = 2, ## Numero minimo de observaciones en un nodo
+        N_menores + N_mayor_dependiente + max_nivel_educ + Clase, 
+      data = train_raw,
+      num.trees= 500, ## Numero de bootstrap samples y arboles a estimar. Default 500  
+      mtry= 4,   # N. var aleatoriamente seleccionadas en cada partición
+      min.node.size  = 1, ## Numero minimo de observaciones en un nodo
       importance="impurity") 
 rf
 
