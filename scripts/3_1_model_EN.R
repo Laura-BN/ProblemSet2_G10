@@ -117,12 +117,101 @@ model2
 model3
 model4
 
-model4$results %>%
-  dplyr::filter(alpha == model4$bestTune$alpha,
-                lambda == model4$bestTune$lambda)
+#Gráfica validacion cruzada de cada modelo
 
-# table(train$jefe_pension)
-# table(train$jefe_salud_sub)
+# Extraer mejor combinación
+best <- model1$bestTune
+best_f <- model1$results[model1$results$alpha == best$alpha & model1$results$lambda == best$lambda, ]
+
+# Filtrar solo lambda <= 0.005
+filtered_results <- subset(model1$results, lambda <= 0.005)
+
+model1_plot <- ggplot(filtered_results, aes(x = lambda, y = F, color = factor(alpha))) +
+  geom_line() +
+  geom_point(data = best_f[best_f$lambda <= 0.005, ], 
+             aes(x = lambda, y = F), 
+             size = 3, shape = 21, fill = "black", show.legend = FALSE) +
+  geom_text(data = best_f[best_f$lambda <= 0.005, ], 
+            aes(x = lambda, y = F, label = paste0("α=", alpha, ", λ=", signif(lambda, 2))), 
+            vjust = -1, hjust = 0.5, size = 3.5, color = "black", show.legend = FALSE) +
+  labs(title = "", 
+       x = "Lambda", 
+       y = "F1 (Cross-validation)",
+       color = "Alpha") +
+  theme_minimal()
+ggsave(file.path(view_path, "model1_plot.png"), plot = model1, width = 8, height = 6, dpi = 300)
+
+# Model 2
+best <- model2$bestTune
+best_f <- model2$results[model2$results$alpha == best$alpha & model2$results$lambda == best$lambda, ]
+
+# Filtrar solo lambda <= 0.05
+filtered_results <- subset(model2$results, lambda <= 0.05)
+
+model2_plot <- ggplot(filtered_results, aes(x = lambda, y = F, color = factor(alpha))) +
+  geom_line() +
+  geom_point(data = best_f[best_f$lambda <= 0.05, ], 
+             aes(x = lambda, y = F), 
+             size = 3, shape = 21, fill = "black", show.legend = FALSE) +
+  geom_text(data = best_f[best_f$lambda <= 0.05, ], 
+            aes(x = lambda, y = F, label = paste0("α=", alpha, ", λ=", signif(lambda, 2))), 
+            vjust = -1, hjust = 0.5, size = 3.5, color = "black", show.legend = FALSE) +
+  labs(title = "", 
+       x = "Lambda", 
+       y = "F1 (Cross-validation)",
+       color = "Alpha") +
+  theme_minimal()
+model2_plot
+
+ggsave(file.path(view_path, "model2.png"), plot = model2_plot, width = 8, height = 6, dpi = 300)
+
+
+# Model 3
+best <- model3$bestTune
+best_f <- model3$results[model3$results$alpha == best$alpha & model3$results$lambda == best$lambda, ]
+
+# Filtrar solo lambda <= 0.05
+filtered_results <- subset(model3$results, lambda <= 0.05)
+
+model3_plot <- ggplot(filtered_results, aes(x = lambda, y = F, color = factor(alpha))) +
+  geom_line() +
+  geom_point(data = best_f[best_f$lambda <= 0.05, ], 
+             aes(x = lambda, y = F), 
+             size = 3, shape = 21, fill = "black", show.legend = FALSE) +
+  geom_text(data = best_f[best_f$lambda <= 0.05, ], 
+            aes(x = lambda, y = F, label = paste0("α=", alpha, ", λ=", signif(lambda, 2))), 
+            vjust = -1, hjust = 0.5, size = 3.5, color = "black", show.legend = FALSE) +
+  labs(title = "", 
+       x = "Lambda", 
+       y = "F1 (Cross-validation)",
+       color = "Alpha") +
+  theme_minimal()
+ggsave(file.path(view_path, "model3.png"), plot = model3_plot, width = 8, height = 6, dpi = 300)
+
+# Model 4
+best <- model4$bestTune
+best_f <- model4$results[model4$results$alpha == best$alpha & model4$results$lambda == best$lambda, ]
+
+# Filtrar solo lambda <= 0.1
+filtered_results <- subset(model4$results, lambda <= 0.1)
+
+model4_plot <- ggplot(filtered_results, aes(x = lambda, y = F, color = factor(alpha))) +
+  geom_line() +
+  geom_point(data = best_f[best_f$lambda <= 0.1, ], 
+             aes(x = lambda, y = F), 
+             size = 3, shape = 21, fill = "black", show.legend = FALSE) +
+  geom_text(data = best_f[best_f$lambda <= 0.1, ], 
+            aes(x = lambda, y = F, label = paste0("α=", alpha, ", λ=", signif(lambda, 2))), 
+            vjust = -1, hjust = 0.5, size = 3.5, color = "black", show.legend = FALSE) +
+  labs(title = "", 
+       x = "Lambda", 
+       y = "F1 (Cross-validation)",
+       color = "Alpha") +
+  theme_minimal()
+model4_plot
+
+ggsave(file.path(view_path, "model4.png"), plot = model4_plot, width = 8, height = 6, dpi = 300)
+
 
 
 #------------------------------------------------------------------------------#
