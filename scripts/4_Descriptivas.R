@@ -19,7 +19,7 @@ colnames(test)
 
 variables_modelos = c(
   "Pobre", "Clase", "Dominio", "hacinamiento", "Lp", "viv_noPropia",
-  "jefe_salud_sub", "jefe_pension", "jefe_edad", "jefe_edad2",
+  "jefe_salud_sub", "jefe_cot_pens", "jefe_edad", "jefe_edad2",
   "jefe_nivel_educ", "jefe_ocu", "N_personas", "N_ocupados", "N_inactivos",
   "N_desocupados", "N_pet", "N_menores", "N_mayor_dependiente", "N_mujer",
   "max_nivel_educ", "total_ind_ingresos", "prop_ina_pet", "prop_ocu_pet",
@@ -28,9 +28,8 @@ variables_modelos = c(
   
   # variables factores
   
-  "jefe_mujer_f", "jefe_mayor_f", "Mayor_dependiente_f",
-   "N_menores_f"
-)
+  "jefe_mujer_f", "jefe_mayor_f"
+  )
 
 train_up = train_up %>% select(all_of(variables_modelos))
 train = train %>% select(all_of(variables_modelos))
@@ -62,7 +61,7 @@ pobre_train = ggplot(df_plot_train, aes(x = Pobre, y = prop)) +
               ) +
               scale_y_continuous(labels = percent_format(accuracy = 1)) +
               labs(
-                title = "Base entrenamiento",
+                title = "Train",
                 x = "",
                 y = "Porcentaje"
               ) +
@@ -86,7 +85,7 @@ pobre_train_up = ggplot(df_plot_train_up, aes(x = Pobre, y = prop)) +
                   ) +
                  scale_y_continuous(labels = percent_format(accuracy = 1)) +
                  labs(
-                    title = "Base entrenamiento upsampling",
+                    title = "Train upsampling",
                     x = "",
                     y = ""
                   ) +
@@ -128,16 +127,14 @@ vars_factores_train = c("Pobre",
                         "Clase",               
                         # "Dominio",            
                         "Propiedad vivienda",        
-                        "Régimen salud jefe hogar",      
-                        "Cotiza pensión jefe hogar",       
+                        "Régimen salud jefe hogar",
+                        "Cotiza pensión jefe hogar", 
                         "Nivel educación jefe hogar",     
                         "Estado ocupación jefe hogar",           
                         # "Máximo nivel educación hogar",      
                         "Tipo ocupación",        
                         "Jefe hogar mujer",       
-                        "Jefe hogar mayor",        
-                        "Mayor dependiente",
-                        "Menores 6 años hogar")
+                        "Jefe hogar mayor")
 
 names(variables_factor) = vars_factores_train
 
@@ -242,6 +239,7 @@ str(train_numericas)
 
 train_numericas_unido = merge(train_numericas, train_numericas_total, by = c("variable"))
 
+
 #-----------------------------------------------------------------------------//
 # 4. Tabla descriptivas variables test ----
 #-----------------------------------------------------------------------------//
@@ -262,16 +260,15 @@ vars_factor_test = colnames(variables_factor_test)
 vars_factores_test = c("Clase",               
                         # "Dominio",            
                         "Propiedad vivienda",        
-                        "Régimen salud jefe hogar",      
-                        "Cotiza pensión jefe hogar",       
+                        "Régimen salud jefe hogar",     
+                        "Cotiza pensión jefe hogar", 
                         "Nivel educación jefe hogar",     
                         "Estado ocupación jefe hogar",           
                         # "Máximo nivel educación hogar",      
                         "Tipo ocupación",        
                         "Jefe hogar mujer",       
-                        "Jefe hogar mayor",        
-                        "Mayor dependiente",
-                        "Menores 6 años hogar")
+                        "Jefe hogar mayor")
+
 
 names(variables_factor_test) = vars_factores_test
 
@@ -288,7 +285,6 @@ test_factores_total = variables_factor_test %>%
 test_factores_total = test_factores_total %>%
                         mutate(variable = factor(variable, levels = vars_factores_test)) %>%
                         arrange(variable)
-
 
 #-----------------------------------------------------------------------------//
 # 4.2 Test variables numéricas ----
@@ -348,8 +344,13 @@ test_numericas_total = test_numericas_total %>%
 # test_factores_total
 factores_unido = merge(train_factores_unido, test_factores_total, by = c("variable", "valor"))
 
+
+sink(file.path(paste0(view_path, "/descriptivas_facotres.txt")))
+
 xtable(factores_unido, caption = "Distribución porcentual por factor, condición de pobreza y total - Bases train y test") %>%
   print(type = "latex", include.rownames = FALSE)
+
+sink()
 
 # Numericas
 
@@ -357,5 +358,90 @@ xtable(factores_unido, caption = "Distribución porcentual por factor, condició
 # test_numericas_total
 numericas_unido = merge(train_numericas_unido, test_numericas_total, by = c("variable"))
 
+
+sink(file.path(paste0(view_path, "/descriptivas_numericas.txt")))
+
 xtable(numericas_unido, caption = "Promedio variables según condición de pobreza y total - Bases train y test") %>%
   print(type = "latex", include.rownames = FALSE)
+
+sink()
+
+while (sink.number() > 0) sink()
+
+#-----------------------------------------------------------------------------//
+# 6. Tablas dominios ----
+#-----------------------------------------------------------------------------//
+
+#-----------------------------------------------------------------------------//
+# 6.1 Train dominios ----
+#-----------------------------------------------------------------------------//
+
+variables_factor_dom = train %>%
+                        select(where(is.factor)) %>% 
+                        select(Dominio, Pobre)
+
+vars_factor_dom = colnames(variables_factor_dom)
+
+# Por condición de pobreza
+
+train_factores_dom = variables_factor_dom %>%
+                select(Pobre, where(is.factor)) %>%
+                pivot_longer(cols = -Pobre, names_to = "variable", values_to = "valor") %>%
+                group_by(Pobre, variable, valor) %>%
+                summarise(n = n(), .groups = "drop") %>%
+                group_by(Pobre, variable) %>%
+                mutate(porcentaje = round(n / sum(n) * 100, 1)) %>%
+                ungroup() %>%
+                select(-n) %>%
+                pivot_wider(names_from = Pobre, values_from = porcentaje, values_fill = 0)
+              
+
+# Total
+
+train_factores_total_dom = variables_factor_dom %>%
+                        select(where(is.factor)) %>%
+                        select(-Pobre) %>%
+                        pivot_longer(cols = everything(), names_to = "variable", values_to = "valor") %>%
+                        group_by(variable, valor) %>%
+                        summarise(n = n(), .groups = "drop") %>%
+                        group_by(variable) %>%
+                        mutate(Total_train = round(n / sum(n) * 100, 1)) %>%
+                        ungroup() %>%
+                        select(-n) 
+
+train_factores_unido_dom = merge(train_factores_dom, train_factores_total_dom, by = c("variable", "valor"))
+
+#-----------------------------------------------------------------------------//
+# 6.2 Test dominios ----
+#-----------------------------------------------------------------------------//
+
+variables_factor_test_dom = test %>%
+  select(where(is.factor)) %>% 
+  select(Dominio)
+
+test_factores_total_dom  = variables_factor_test_dom %>%
+                           select(where(is.factor)) %>%
+                           pivot_longer(cols = everything(), names_to = "variable", values_to = "valor") %>%
+                           group_by(variable, valor) %>%
+                           summarise(n = n(), .groups = "drop") %>%
+                           group_by(variable) %>%
+                           mutate(Total_test = round(n / sum(n) * 100, 1)) %>%
+                           ungroup() %>%
+                           select(-n) 
+#-----------------------------------------------------------------------------//
+# 6.3 Unión train y test dominios distribuciones ----
+#-----------------------------------------------------------------------------//
+
+dominios_unido = merge(train_factores_unido_dom, test_factores_total_dom, by = c("variable", "valor"))
+
+dominios_unido = dominios_unido %>% select(-variable)
+
+sink(file.path(paste0(view_path, "/tabla_dominios.txt")))
+
+xtable(dominios_unido, caption = "Distribución porcentual por dominio según condición de pobreza y total - Bases train y test") %>%
+  print(type = "latex", include.rownames = FALSE)
+
+sink()
+
+while (sink.number() > 0) sink()
+
