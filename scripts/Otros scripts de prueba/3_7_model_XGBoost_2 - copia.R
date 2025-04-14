@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------------------//
 # Modelo XGBoost
 # Problem Set 2 G10 - BDML 202501
-# Fecha actualización: 11 de abril de 2025
+# Fecha actualización: 05 de abril de 2025
 #-----------------------------------------------------------------------------//
 
 # 1. IMPORTAR DATOS ------------------------------------------------------------
@@ -56,22 +56,16 @@ table(validation$Pobre)
 
 # 4. CONSTRUIR EL XGBOOST -----------------------------------------------------
 
-# Calcular proporción pobres y no pobres
-num_neg <- sum(train$Pobre == "No_pobre")
-num_pos <- sum(train$Pobre == "Pobre")
-scale_pos_weight <- num_neg / num_pos
-scale_pos_weight
-
 # Grilla de hiperparámetros con ajustes adicionales
 grid_xgboost <- expand.grid(
                 nrounds = c(100, 250, 500),              # Número de rondas (iteraciones)
-                max_depth = c(3, 5, 7),             # Profundidad máxima del árbol
-                eta = c(0.05, 0.1),                 # Tasa de aprendizaje
-                gamma = c(0, 0.1, 1),               # Penalización por complejidad
-                min_child_weight = c(1, 3, 5),      # Peso mínimo de un nodo hijo
-                colsample_bytree = c(0.6, 0.8),     # Fracción de características por árbol
-                subsample = c(0.7)                  # Fracción de muestras para cada árbol
-              )  
+                max_depth = c(2, 3, 5),                  # Profundidad máxima del árbol
+                eta = c(0.01, 0.05, 0.1),                 # Tasa de aprendizaje
+                gamma = c(0, 0.1, 0.3),                  # Penalización por complejidad
+                min_child_weight = c(1, 10, 25),          # Peso mínimo de un nodo hijo
+                colsample_bytree = c(0.5, 0.7, 1),       # Fracción de características por árbol
+                subsample = c(0.6, 0.8, 1)               # Fracción de muestras para cada árbol
+              )  # elimina combinaciones pesadas e innecesarias
 
 grid_xgboost
 
@@ -94,7 +88,7 @@ fitControl <- trainControl(
               classProbs = TRUE,
               savePredictions = "all", 
               verboseIter = TRUE,
-              sampling = "smote"   # Sobremuestreo de la clase minoritaria (Pobre)
+              sampling = "up"   # Sobremuestreo de la clase minoritaria (Pobre)
             )
 
 # Entrenamiento de XGBoost
@@ -102,18 +96,15 @@ set.seed(91519) # Semilla para reproducibilidad
 
 Xgboost_tree <- train(
                 Pobre ~ jefe_edad + jefe_mujer + jefe_edad2 + jefe_salud_sub +
-                  N_personas + hacinamiento + 
-                  max_nivel_educ + Clase + pago_arriendo +
-                  viv_noPropia + Lp + prop_fuentes_ing + prop_ina_pet + Dominio +
-                  prop_ocu_pet + jefe_pension + prop_menores12_pob + prop_mayores_pob +
-                  prop_anios_educ + tipo_trabajo + prop_des_pet + jefe_ocu + N_mujer,
+                  N_personas + hacinamiento + N_ocupados + N_inactivos +
+                  N_menores + N_mayor_dependiente + max_nivel_educ + Clase +
+                  viv_noPropia,
                 data = train_raw, 
                 method = "xgbTree", 
                 trControl = fitControl, 
                 tuneGrid = grid_xgboost, 
                 metric = "F1", 
                 verbosity = 0
-                #scale_pos_weight = scale_pos_weight # Balanceo de clases
               )
 
 Xgboost_tree
@@ -128,7 +119,7 @@ phat_xgb_val <- predict(Xgboost_tree,
                         type = "prob")[, "Pobre"]
 
 # Clasificación con umbral 0.5
-pred_class_val <- ifelse(phat_xgb_val >= 0.35, 1, 0)
+pred_class_val <- ifelse(phat_xgb_val >= 0.5, 1, 0)
 
 # Vector real binario
 actual_val <- ifelse(validation$Pobre == "Pobre", 1, 0)
@@ -148,7 +139,7 @@ cm_xgb <- caret::confusionMatrix(as.factor(pred_class_val), as.factor(actual_val
 
 # Imprimir métricas
 cat("AUC en validación (XGBoost):", round(aucval_xgb, 5), "\n")
-cat("F1 Score en validación (umbral 0.35):", round(f1_val_xgb, 4), "\n")
+cat("F1 Score en validación (umbral 0.3):", round(f1_val_xgb, 4), "\n")
 print(cm_xgb)
 
 
@@ -158,7 +149,7 @@ print(cm_xgb)
 phat_xgb_test <- predict(Xgboost_tree, newdata = test_raw, type = "prob")[, "Pobre"]
 
 # 2. Clasificar con umbral 0.5
-test_raw$pobre <- ifelse(phat_xgb_test >= 0.35, "Pobre", "No_pobre")
+test_raw$pobre <- ifelse(phat_xgb_test >= 0.5, "Pobre", "No_pobre")
 
 # 3. Crear base de predicción para Kaggle
 predictSample <- test_raw %>%
@@ -169,7 +160,7 @@ predictSample <- test_raw %>%
 best_params <- Xgboost_tree$bestTune
 
 # (Opcional: redondear algunos para nombre más corto)
-name <- sprintf("XGB_Final_cv_%dfolds_n%d_d%d_eta%.2f_g%.1f_cs%.2f_mc%d_ss%.2f.csv",
+name <- sprintf("XGB_cv_%dfolds_n%d_d%d_eta%.2f_g%.1f_cs%.2f_mc%d_ss%.2f.csv",
                 fitControl$number,
                 best_params$nrounds,
                 best_params$max_depth,
@@ -198,47 +189,14 @@ sink()
 cat("Bitacora de parámetros guardada en:", param_log_name, "\n")
 
 
-# 7. IMPORTANCIA DE LAS VARIABLES (XGBoost) --------------------------------
-
-# Obtener importancia de variables
-var_imp <- varImp(Xgboost_tree)
-
-# Convertir a data frame para ggplot
-imp_df <- data.frame(
-  Variable = rownames(var_imp$importance),
-  Importance = var_imp$importance$Overall
-)
-
-# Ordenar por importancia
-imp_df <- imp_df %>% arrange(desc(Importance))
-
-# Crear el gráfico y guardarlo en una variable
-plot_importance <- ggplot(imp_df, aes(x = reorder(Variable, Importance), y = Importance)) +
-  geom_col(fill = "steelblue") +
-  coord_flip() +
-  labs(
-    title = "Importancia de las variables en XGBoost",
-    x = "Variable",
-    y = "Importancia (relativa)"
-  ) +
-  theme_minimal()
-
-plot_importance
-
-# Guardar el gráfico
-ggsave(
-  filename = file.path(stores_path, "importancia_variables_xgboostFinal.png"),
-  plot = plot_importance,
-  width = 8,
-  height = 6,
-  dpi = 300
-)
 
 
 
-# 8. SELECCIONAR UMBRAL ÓPTIMO (XGBoost) --------------------------------
 
-# Vector de probabilidades
+
+# 7. SELECCIONAR UMBRAL ÓPTIMO (XGBoost) --------------------------------
+
+# Vector de probabilidades (ya deberías tenerlo)
 phat_xgb_val <- predict(Xgboost_tree, newdata = validation, type = "prob")[, "Pobre"]
 actual_val <- ifelse(validation$Pobre == "Pobre", 1, 0)
 
@@ -257,17 +215,3 @@ cat("Mejor F1 Score obtenido:", round(max(f1_scores), 4), "\n")
 plot(thresholds, f1_scores, type = "l", col = "blue", lwd = 2,
      xlab = "Umbral", ylab = "F1 Score", main = "Optimización del umbral")
 abline(v = best_thresh, col = "red", lty = 2)
-
-# Guardar el gráfico base en un archivo PNG
-png(filename = file.path(stores_path, "umbral_f1_xgboostFinal.png"),
-    width = 800, height = 600)
-
-# Crear gráfico base
-plot(thresholds, f1_scores, type = "l", col = "blue", lwd = 2,
-     xlab = "Umbral", ylab = "F1 Score", main = "Optimización del umbral")
-abline(v = best_thresh, col = "red", lty = 2)
-
-# Cerrar dispositivo gráfico
-dev.off()
-
-

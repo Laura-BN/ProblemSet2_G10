@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------------------//
 # Modelo XGBoost
 # Problem Set 2 G10 - BDML 202501
-# Fecha actualización: 11 de abril de 2025
+# Fecha actualización: 12 de abril de 2025
 #-----------------------------------------------------------------------------//
 
 # 1. IMPORTAR DATOS ------------------------------------------------------------
@@ -64,13 +64,13 @@ scale_pos_weight
 
 # Grilla de hiperparámetros con ajustes adicionales
 grid_xgboost <- expand.grid(
-                nrounds = c(100, 250, 500),              # Número de rondas (iteraciones)
-                max_depth = c(3, 5, 7),             # Profundidad máxima del árbol
-                eta = c(0.05, 0.1),                 # Tasa de aprendizaje
-                gamma = c(0, 0.1, 1),               # Penalización por complejidad
-                min_child_weight = c(1, 3, 5),      # Peso mínimo de un nodo hijo
-                colsample_bytree = c(0.6, 0.8),     # Fracción de características por árbol
-                subsample = c(0.7)                  # Fracción de muestras para cada árbol
+                nrounds = 500,              # Número de rondas (iteraciones)
+                max_depth = 7,             # Profundidad máxima del árbol
+                eta = 0.05,           # Tasa de aprendizaje
+                gamma = 0,               # Penalización por complejidad
+                min_child_weight = 5,      # Peso mínimo de un nodo hijo
+                colsample_bytree = 0.6,     # Fracción de características por árbol
+                subsample = 0.7                 # Fracción de muestras para cada árbol
               )  
 
 grid_xgboost
@@ -104,7 +104,7 @@ Xgboost_tree <- train(
                 Pobre ~ jefe_edad + jefe_mujer + jefe_edad2 + jefe_salud_sub +
                   N_personas + hacinamiento + 
                   max_nivel_educ + Clase + pago_arriendo +
-                  viv_noPropia + Lp + prop_fuentes_ing + prop_ina_pet + Dominio +
+                  viv_noPropia + Lp + prop_fuentes_ing + prop_ina_pet + Dominio + 
                   prop_ocu_pet + jefe_pension + prop_menores12_pob + prop_mayores_pob +
                   prop_anios_educ + tipo_trabajo + prop_des_pet + jefe_ocu + N_mujer,
                 data = train_raw, 
@@ -128,7 +128,7 @@ phat_xgb_val <- predict(Xgboost_tree,
                         type = "prob")[, "Pobre"]
 
 # Clasificación con umbral 0.5
-pred_class_val <- ifelse(phat_xgb_val >= 0.35, 1, 0)
+pred_class_val <- ifelse(phat_xgb_val >= 0.36, 1, 0)
 
 # Vector real binario
 actual_val <- ifelse(validation$Pobre == "Pobre", 1, 0)
@@ -158,7 +158,7 @@ print(cm_xgb)
 phat_xgb_test <- predict(Xgboost_tree, newdata = test_raw, type = "prob")[, "Pobre"]
 
 # 2. Clasificar con umbral 0.5
-test_raw$pobre <- ifelse(phat_xgb_test >= 0.35, "Pobre", "No_pobre")
+test_raw$pobre <- ifelse(phat_xgb_test >= 0.36, "Pobre", "No_pobre")
 
 # 3. Crear base de predicción para Kaggle
 predictSample <- test_raw %>%
@@ -169,7 +169,7 @@ predictSample <- test_raw %>%
 best_params <- Xgboost_tree$bestTune
 
 # (Opcional: redondear algunos para nombre más corto)
-name <- sprintf("XGB_Final_cv_%dfolds_n%d_d%d_eta%.2f_g%.1f_cs%.2f_mc%d_ss%.2f.csv",
+name <- sprintf("XGB_F2_cv_%dfolds_n%d_d%d_eta%.2f_g%.1f_cs%.2f_mc%d_ss%.2f.csv",
                 fitControl$number,
                 best_params$nrounds,
                 best_params$max_depth,
@@ -227,7 +227,7 @@ plot_importance
 
 # Guardar el gráfico
 ggsave(
-  filename = file.path(stores_path, "importancia_variables_xgboostFinal.png"),
+  filename = file.path(stores_path, "importancia_variables_xgboostF2.png"),
   plot = plot_importance,
   width = 8,
   height = 6,
@@ -259,7 +259,7 @@ plot(thresholds, f1_scores, type = "l", col = "blue", lwd = 2,
 abline(v = best_thresh, col = "red", lty = 2)
 
 # Guardar el gráfico base en un archivo PNG
-png(filename = file.path(stores_path, "umbral_f1_xgboostFinal.png"),
+png(filename = file.path(stores_path, "umbral_f1_xgboostF2.png"),
     width = 800, height = 600)
 
 # Crear gráfico base
