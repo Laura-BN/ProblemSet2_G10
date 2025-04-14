@@ -1,0 +1,36 @@
+% latex table generated in R 4.4.2 by xtable 1.8-4 package
+% Sun Apr 13 14:17:10 2025
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrrr}
+  \hline
+valor & Pobre & No\_pobre & Total\_train & Total\_test \\ 
+  \hline
+ARMENIA & 2.60 & 3.50 & 3.40 & 3.60 \\ 
+  BARRANQUILLA & 3.10 & 4.20 & 4.00 & 4.30 \\ 
+  BUCARAMANGA & 1.90 & 3.50 & 3.20 & 3.30 \\ 
+  CALI & 2.40 & 4.50 & 4.00 & 4.20 \\ 
+  CARTAGENA & 3.10 & 3.30 & 3.20 & 3.40 \\ 
+  CUCUTA & 3.90 & 2.60 & 2.80 & 3.10 \\ 
+  FLORENCIA & 4.00 & 2.70 & 3.00 & 3.10 \\ 
+  IBAGUE & 2.10 & 3.50 & 3.20 & 3.40 \\ 
+  MANIZALES & 1.50 & 4.20 & 3.70 & 3.90 \\ 
+  MEDELLIN & 3.00 & 6.00 & 5.40 & 5.80 \\ 
+  MONTERIA & 3.20 & 3.00 & 3.00 & 3.10 \\ 
+  NEIVA & 3.00 & 3.50 & 3.40 & 3.70 \\ 
+  PASTO & 3.00 & 3.00 & 3.00 & 3.30 \\ 
+  PEREIRA & 1.50 & 3.80 & 3.40 & 3.70 \\ 
+  POPAYAN & 4.30 & 3.40 & 3.60 & 3.80 \\ 
+  QUIBDO & 4.00 & 2.10 & 2.50 & 2.60 \\ 
+  RESTO URBANO & 15.20 & 9.10 & 10.30 & 11.10 \\ 
+  RIOHACHA & 5.30 & 2.80 & 3.30 & 3.60 \\ 
+  RURAL & 14.10 & 8.20 & 9.40 & 10.10 \\ 
+  SANTA MARTA & 4.10 & 3.40 & 3.60 & 3.90 \\ 
+  SINCELEJO & 3.50 & 3.20 & 3.20 & 3.50 \\ 
+  TUNJA & 1.90 & 3.00 & 2.80 & 2.90 \\ 
+  VALLEDUPAR & 4.10 & 2.80 & 3.00 & 3.20 \\ 
+  VILLAVICENCIO & 2.10 & 3.50 & 3.20 & 3.50 \\ 
+   \hline
+\end{tabular}
+\caption{Distribución porcentual por dominio según condición de pobreza y total - Bases train y test} 
+\end{table}
